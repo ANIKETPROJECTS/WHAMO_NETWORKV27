@@ -460,6 +460,7 @@ function DesignerInner() {
   }, [selectElement]);
 
   const onSelectionChange = useCallback(({ nodes, edges }: { nodes: WhamoNode[], edges: WhamoEdge[] }) => {
+    if (activeLinkTool) return;
     if (nodes.length > 0) {
       selectElement(nodes[0].id, 'node');
     } else if (edges.length > 0) {
@@ -467,7 +468,7 @@ function DesignerInner() {
     } else {
       selectElement(null, null);
     }
-  }, [selectElement]);
+  }, [selectElement, activeLinkTool]);
 
   useEffect(() => {
     if (!activeLinkTool) setLinkSourceNodeId(null);
