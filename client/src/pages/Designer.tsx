@@ -130,6 +130,13 @@ function DesignerInner() {
   const [activeLinkTool, setActiveLinkTool] = useState<'pump' | 'checkValve' | 'turbine' | null>(null);
   const [linkSourceNodeId, setLinkSourceNodeId] = useState<string | null>(null);
 
+  // Refs always hold the latest values — used in event listeners to avoid stale closures
+  const activeLinkToolRef = useRef<'pump' | 'checkValve' | 'turbine' | null>(null);
+  const linkSourceNodeIdRef = useRef<string | null>(null);
+  const rfContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { activeLinkToolRef.current = activeLinkTool; }, [activeLinkTool]);
+  useEffect(() => { linkSourceNodeIdRef.current = linkSourceNodeId; }, [linkSourceNodeId]);
+
   // Fields that live in a pipe profile (shared across same-label edges)
   const PIPE_PROFILE_FIELDS = [
     'type', 'length', 'diameter', 'celerity', 'friction', 'numSegments',
@@ -437,30 +444,50 @@ function DesignerInner() {
     [isLocked, screenToFlowPosition, addNode, storeOnConnect, toast]
   );
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    if (activeLinkTool) {
-      if (!linkSourceNodeId) {
-        setLinkSourceNodeId(node.id);
+  // DOM-level capture listener: intercepts mousedown on any part of a node (body OR handle dots)
+  // Uses refs so it always reads the latest tool/source values without stale closures.
+  useEffect(() => {
+    const container = rfContainerRef.current;
+    if (!container) return;
+    const handler = (event: MouseEvent) => {
+      if (!activeLinkToolRef.current) return;
+      const nodeEl = (event.target as Element).closest('.react-flow__node');
+      if (!nodeEl) return;
+      const nodeId = nodeEl.getAttribute('data-id');
+      if (!nodeId) return;
+
+      if (!linkSourceNodeIdRef.current) {
+        linkSourceNodeIdRef.current = nodeId;
+        setLinkSourceNodeId(nodeId);
+      } else if (linkSourceNodeIdRef.current === nodeId) {
+        toast({ variant: 'destructive', title: 'Invalid Connection', description: 'Cannot connect an element to itself.' });
       } else {
-        if (linkSourceNodeId === node.id) {
-          toast({ variant: 'destructive', title: 'Invalid Connection', description: 'Cannot connect an element to itself.' });
-          return;
-        }
-        addEdgeElement(activeLinkTool, linkSourceNodeId, node.id);
+        const tool = activeLinkToolRef.current;
+        const srcId = linkSourceNodeIdRef.current;
+        addEdgeElement(tool, srcId, nodeId);
+        linkSourceNodeIdRef.current = null;
+        activeLinkToolRef.current = null;
         setLinkSourceNodeId(null);
         setActiveLinkTool(null);
       }
-      return;
-    }
+    };
+    container.addEventListener('mousedown', handler, true);
+    return () => container.removeEventListener('mousedown', handler, true);
+  }, [addEdgeElement, toast]);
+
+  // Normal node click: only runs when NOT in link mode (ref guard keeps it fast)
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    if (activeLinkToolRef.current) return;
     selectElement(node.id, 'node');
-  }, [selectElement, activeLinkTool, linkSourceNodeId, addEdgeElement, toast]);
+  }, [selectElement]);
 
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
     selectElement(edge.id, 'edge');
   }, [selectElement]);
 
+  // Selection change: ref guard blocks properties panel from opening in link mode
   const onSelectionChange = useCallback(({ nodes, edges }: { nodes: WhamoNode[], edges: WhamoEdge[] }) => {
-    if (activeLinkTool) return;
+    if (activeLinkToolRef.current) return;
     if (nodes.length > 0) {
       selectElement(nodes[0].id, 'node');
     } else if (edges.length > 0) {
@@ -468,11 +495,7 @@ function DesignerInner() {
     } else {
       selectElement(null, null);
     }
-  }, [selectElement, activeLinkTool]);
-
-  useEffect(() => {
-    if (!activeLinkTool) setLinkSourceNodeId(null);
-  }, [activeLinkTool]);
+  }, [selectElement]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -947,7 +970,7 @@ function DesignerInner() {
           <ResizablePanel defaultSize={75} minSize={isMaximized ? 0 : 30} className={cn(isMaximized && "hidden")}>
             <div className="flex h-full w-full overflow-hidden relative">
               {/* Canvas Area */}
-              <div className={cn("flex-1 relative h-full bg-slate-50 transition-all duration-300", activeLinkTool && "link-mode-active")}>
+              <div ref={rfContainerRef} className={cn("flex-1 relative h-full bg-slate-50 transition-all duration-300", activeLinkTool && "link-mode-active")}>
                 {activeLinkTool && (
                   <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full shadow-lg text-white text-sm font-medium"
@@ -988,7 +1011,7 @@ function DesignerInner() {
                   className={cn("bg-slate-50", activeLinkTool && "cursor-crosshair")}
                   proOptions={{ hideAttribution: true }}
                   nodesDraggable={!isLocked && !activeLinkTool}
-                  nodesConnectable={!isLocked && !activeLinkTool}
+                  nodesConnectable={!isLocked}
                   elementsSelectable={!activeLinkTool}
                 >
                   <Background color="#94a3b8" gap={20} size={1} className={cn(!showGrid && "opacity-0")} />
