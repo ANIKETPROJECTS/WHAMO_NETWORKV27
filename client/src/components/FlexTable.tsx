@@ -84,7 +84,6 @@ const FILTER_CHIPS: { key: FilterKey; label: string }[] = [
 
 function matchesFilter(row: UnifiedRow, filter: FilterKey): boolean {
   if (filter === 'all') return true;
-  if (filter === 'node') return row.kind === 'node';
   return row.subType === filter;
 }
 
