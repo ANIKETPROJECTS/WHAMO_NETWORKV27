@@ -1389,14 +1389,18 @@ export function FlexTable({ open, onClose }: FlexTableProps) {
       const exportRows: ExportRow[] = filteredRows.map(r => ({
         id: r.id, kind: r.kind, subType: r.subType, data: r.data,
       }));
-      const { updates, matched, skipped } = await importTabFromExcel(excelFilter, exportRows, globalUnit, file);
+      const { updates, hScheduleUpdates, matched, skipped } = await importTabFromExcel(excelFilter, exportRows, globalUnit, file);
       updates.forEach(({ id, kind, data }) => {
         if (kind === 'edge') updateEdgeData(id, data);
         else updateNodeData(id, data);
       });
+      hScheduleUpdates?.forEach(({ scheduleNumber, points }) => {
+        addHSchedule(scheduleNumber);
+        updateHSchedule(scheduleNumber, points);
+      });
       toast({
         title: 'Import complete',
-        description: `${matched} row${matched !== 1 ? 's' : ''} updated${skipped > 0 ? `, ${skipped} skipped (label not found)` : ''}.`,
+        description: `${matched} row${matched !== 1 ? 's' : ''} updated${hScheduleUpdates?.length ? `, ${hScheduleUpdates.length} T/H schedule(s) updated` : ''}${skipped > 0 ? `, ${skipped} skipped (label not found)` : ''}.`,
       });
     } catch (err: any) {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });

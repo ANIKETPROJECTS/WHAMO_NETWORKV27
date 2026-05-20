@@ -140,7 +140,7 @@ export const TAB_COLS: Record<FilterKey, ColDef[]> = {
     // H Schedule mode:      Res. Elevation locked, H Sched # editable, T/H Pairs shows pairs
     { key: 'reservoirElevation', header: 'Res. Elevation (Fixed only)', type: 'number', width: 26, conditionalLock: { field: 'mode', lockedWhen: 'H Schedule' } },
     { key: 'hScheduleNumber',    header: 'H Sched # (Schedule only)',   type: 'number', width: 24, conditionalLock: { field: 'mode', lockedWhen: 'Fixed Elevation' } },
-    { key: '_thPairs',           header: 'T/H Pairs (view only)',       type: 'text',   width: 36, readOnly: true },
+    { key: '_thPairs',           header: 'T/H Pairs (time:head; ...)',  type: 'text',   width: 40, conditionalLock: { field: 'mode', lockedWhen: 'Fixed Elevation' } },
     { key: 'comment',            header: 'Comment',                     type: 'text', width: 24 },
   ],
   junction: [
@@ -294,17 +294,13 @@ function getRowValue(
   // BC Mode: translate stored 'fixed'/'schedule' → display label for Excel dropdown
   if (col.key === 'mode') return modeToDisplay(data.mode);
 
-  // T/H Pairs summary (reservoir H Schedule mode)
+  // T/H Pairs (reservoir H Schedule mode) — editable format: "time:head; time:head; ..."
   if (col.key === '_thPairs') {
-    if (modeToDisplay(data.mode) !== 'H Schedule') return 'NA — Fixed Elevation mode';
+    if (modeToDisplay(data.mode) !== 'H Schedule') return 'NA';
     const schedNum = data.hScheduleNumber ?? 1;
     const sched = hSchedules?.find(s => s.number === schedNum);
-    if (!sched || sched.points.length === 0) return '0 pairs — add in app';
-    const pts = sched.points.slice(0, 4)
-      .map(p => `T=${p.time} H=${p.head}`)
-      .join('; ');
-    const extra = sched.points.length > 4 ? ` … +${sched.points.length - 4} more` : '';
-    return `${sched.points.length} pts: ${pts}${extra}`;
+    if (!sched || sched.points.length === 0) return '';
+    return sched.points.map(p => `${p.time}:${p.head}`).join('; ');
   }
 
   // Conditionally locked cells show NA
@@ -662,12 +658,17 @@ export interface ImportUpdate {
   data: Record<string, any>;
 }
 
+export interface HScheduleUpdate {
+  scheduleNumber: number;
+  points: { time: number; head: number }[];
+}
+
 export async function importTabFromExcel(
   filter: FilterKey,
   rows: ExportRow[],
   globalUnit: string,
   file: File,
-): Promise<{ updates: ImportUpdate[]; skipped: number; matched: number }> {
+): Promise<{ updates: ImportUpdate[]; hScheduleUpdates: HScheduleUpdate[]; skipped: number; matched: number }> {
   const cols = TAB_COLS[filter];
   if (!cols) throw new Error(`Unknown filter: ${filter}`);
 
@@ -697,6 +698,7 @@ export async function importTabFromExcel(
   }
 
   const updates: ImportUpdate[] = [];
+  const hScheduleUpdates: HScheduleUpdate[] = [];
   let skipped = 0;
   let matched = 0;
 
@@ -739,6 +741,27 @@ export async function importTabFromExcel(
       // BC Mode: translate Excel display label back to stored value
       if (col.key === 'mode') {
         update.mode = displayToMode(strVal);
+        return;
+      }
+
+      // T/H Pairs: parse "time:head; time:head; ..." and collect as hSchedule update
+      if (col.key === '_thPairs') {
+        const effectiveMode = update.mode ?? existingRow.data.mode ?? 'fixed';
+        if (effectiveMode !== 'schedule') return;
+        const schedNum = update.hScheduleNumber ?? existingRow.data.hScheduleNumber ?? 1;
+        const points: { time: number; head: number }[] = [];
+        strVal.split(';').forEach(segment => {
+          const trimmed = segment.trim();
+          if (!trimmed) return;
+          const colonIdx = trimmed.indexOf(':');
+          if (colonIdx < 0) return;
+          const t = parseFloat(trimmed.slice(0, colonIdx).trim());
+          const h = parseFloat(trimmed.slice(colonIdx + 1).trim());
+          if (!isNaN(t) && !isNaN(h)) points.push({ time: t, head: h });
+        });
+        if (points.length > 0) {
+          hScheduleUpdates.push({ scheduleNumber: Number(schedNum), points });
+        }
         return;
       }
 
@@ -791,5 +814,5 @@ export async function importTabFromExcel(
     updates.push({ id: existingRow.id, kind: existingRow.kind, data: update });
   });
 
-  return { updates, skipped, matched };
+  return { updates, hScheduleUpdates, skipped, matched };
 }
