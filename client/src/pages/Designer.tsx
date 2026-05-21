@@ -83,6 +83,7 @@ function DesignerInner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { zoomIn, zoomOut, fitView, screenToFlowPosition } = useReactFlow();
   const [validationData, setValidationData] = useState<{ errors: ValidationError[], warnings: ValidationError[] } | null>(null);
+  const [pendingGenerateMode, setPendingGenerateMode] = useState<'inp' | 'out' | null>(null);
   const [showNodeSelection, setShowNodeSelection] = useState(false);
   const [showVisualization, setShowVisualization] = useState(false);
 
@@ -648,7 +649,11 @@ function DesignerInner() {
         setValidationData(results);
         return;
       }
+      // Validation passed → open Output Requests dialog before generating
+      setPendingGenerateMode('inp');
+      return;
     }
+    // force === true → user confirmed via Output Requests dialog, actually generate
     try {
       // Pass false to prevent internal download, we handle it here
       const inpContent = generateInpFile(nodes as WhamoNode[], edges as WhamoEdge[], false);
@@ -672,6 +677,16 @@ function DesignerInner() {
     } catch (err) {
       toast({ variant: "destructive", title: "Generation Failed", description: err instanceof Error ? err.message : "Could not generate files. Check connections." });
     }
+  };
+
+  // Validates network then opens Output Requests dialog with .OUT context
+  const handleGenerateOutInit = () => {
+    const results = validateNetwork(nodes as WhamoNode[], edges as WhamoEdge[]);
+    if (results.errors.length > 0 || results.warnings.length > 0) {
+      setValidationData(results);
+      return;
+    }
+    setPendingGenerateMode('out');
   };
 
   const [projectState, setProjectState] = useState<"empty" | "active">("empty");
@@ -890,8 +905,10 @@ function DesignerInner() {
       {/* Top Bar (Header) */}
       <Header 
         onExport={handleGenerateInp} 
-        onGenerateOut={handleGenerateOut}
+        onGenerateOut={handleGenerateOutInit}
         isGeneratingOut={isGeneratingOut}
+        pendingGenerateMode={pendingGenerateMode}
+        onClearPendingMode={() => setPendingGenerateMode(null)}
         onSave={handleSave} 
         onSaveAs={handleSaveAs}
         onLoad={handleLoadClick} 

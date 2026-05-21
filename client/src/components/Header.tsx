@@ -74,8 +74,10 @@ import folderIcon from "@assets/open-folder_1770356038145.png";
 
 interface HeaderProps {
   onExport: (fileName?: string) => void;
-  onGenerateOut: (fileName?: string) => void;
+  onGenerateOut: () => void;
   isGeneratingOut: boolean;
+  pendingGenerateMode: 'inp' | 'out' | null;
+  onClearPendingMode: () => void;
   onSave: () => void;
   onSaveAs: () => void;
   onLoad: () => void;
@@ -89,6 +91,8 @@ export function Header({
   onExport,
   onGenerateOut,
   isGeneratingOut,
+  pendingGenerateMode,
+  onClearPendingMode,
   onSave,
   onSaveAs,
   onLoad,
@@ -102,6 +106,16 @@ export function Header({
   const [showHelp, setShowHelp] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showFlexTable, setShowFlexTable] = useState(false);
+  const [showOutputDialog, setShowOutputDialog] = useState(false);
+  const [generateDialogMode, setGenerateDialogMode] = useState<'inp' | 'out' | null>(null);
+
+  // When Designer signals validation passed, open the Output Requests dialog
+  useEffect(() => {
+    if (pendingGenerateMode) {
+      setGenerateDialogMode(pendingGenerateMode);
+      setShowOutputDialog(true);
+    }
+  }, [pendingGenerateMode]);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -266,6 +280,7 @@ export function Header({
       });
       return;
     }
+    // Runs validation in Designer → if passes, sets pendingGenerateMode → triggers useEffect above
     onExport(projectName);
   };
 
@@ -279,7 +294,28 @@ export function Header({
       });
       return;
     }
-    handleGenerateOutDirectly(projectName);
+    // Runs validation in Designer → if passes, sets pendingGenerateMode → triggers useEffect above
+    onGenerateOut();
+  };
+
+  const handleConfirmGenerate = () => {
+    setShowOutputDialog(false);
+    setGenerateDialogMode(null);
+    onClearPendingMode();
+    if (generateDialogMode === 'inp') {
+      // force=true skips re-validation, proceeds directly to file generation
+      onExport(true as any);
+    } else if (generateDialogMode === 'out') {
+      handleGenerateOutDirectly(projectName);
+    }
+  };
+
+  const handleCloseOutputDialog = (open: boolean) => {
+    setShowOutputDialog(open);
+    if (!open) {
+      setGenerateDialogMode(null);
+      onClearPendingMode();
+    }
   };
 
   return (
@@ -573,15 +609,18 @@ export function Header({
                   <BarChart2 className="w-4 h-4" /> Visualization
                 </MenubarItem>
                 <MenubarSeparator />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <MenubarItem
-                      onSelect={(e) => e.preventDefault()}
-                      className="gap-2"
-                    >
-                      <ListVideo className="w-4 h-4" /> Output Requests
-                    </MenubarItem>
-                  </DialogTrigger>
+                <MenubarItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setGenerateDialogMode(null);
+                    setShowOutputDialog(true);
+                  }}
+                  className="gap-2"
+                >
+                  <ListVideo className="w-4 h-4" /> Output Requests
+                </MenubarItem>
+                {/* Controlled Output Requests Dialog — opened from Tools menu OR after validation from Generate buttons */}
+                <Dialog open={showOutputDialog} onOpenChange={handleCloseOutputDialog}>
                   <DialogContent>
                     <DialogHeader>
                       <div className="flex items-center justify-between">
@@ -591,9 +630,6 @@ export function Header({
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Elements to select: nodes (excluding special types if any) and edges
-                              // Types mentioned: node, conduit (edge), dummypipe (edge), other (edge)
-                              // The user wants All History, Plot and Spreadsheet
                               const types: ("HISTORY" | "PLOT" | "SPREADSHEET")[] = ["HISTORY", "PLOT", "SPREADSHEET"];
                               const variables = ["Q", "HEAD", "ELEV", "VEL", "PRESS", "PIEZHEAD"];
                               
@@ -934,6 +970,21 @@ export function Header({
                         )}
                       </div>
                     </div>
+                    {generateDialogMode && (
+                      <DialogFooter className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mr-auto self-center">
+                          Review output requests above, then continue to generate the file.
+                        </p>
+                        <Button
+                          onClick={handleConfirmGenerate}
+                          className="bg-[#1a73e8] hover:bg-[#1557b0] text-white"
+                          data-testid="button-confirm-generate"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Generate .{generateDialogMode === 'inp' ? 'INP' : 'OUT'}
+                        </Button>
+                      </DialogFooter>
+                    )}
                   </DialogContent>
                 </Dialog>
 
