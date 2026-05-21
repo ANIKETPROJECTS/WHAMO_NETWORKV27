@@ -76,11 +76,11 @@ export const ConnectionEdge = memo(({
   const isElementEdge = isPump || isCheckValve || isTurbine;
 
   const isDummy = edgeType === 'dummy';
-  const strokeColor = isPump ? '#f97316'
-    : isCheckValve ? '#8b5cf6'
-    : isTurbine ? '#14b8a6'
+  const strokeColor = isPump ? '#8B0000'
+    : isCheckValve ? '#5C3317'
+    : isTurbine ? '#006400'
     : isDummy ? '#94a3b8'
-    : '#3b82f6';
+    : '#00008B';
   const strokeDasharray = isDummy ? '8 8' : undefined;
 
   const tooltipTitle = isPump ? 'Pump Properties'
