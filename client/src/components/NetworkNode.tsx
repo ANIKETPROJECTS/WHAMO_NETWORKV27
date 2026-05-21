@@ -4,239 +4,202 @@ import { memo } from 'react';
 import { TooltipWrapper, DataList } from './TooltipWrapper';
 import { useNetworkStore } from '@/lib/store';
 
-// Common handle styles
-const HandleStyle = "w-2 h-2 bg-primary border border-white opacity-0 group-hover:opacity-100 transition-opacity";
+const HandleStyle = "w-2 h-2 border border-white opacity-0 group-hover:opacity-100 transition-opacity";
 
-// Hook: returns true if this node has a node-order validation error
 function useNodeOrderError(id: string) {
   return useNetworkStore(state => state.nodeOrderErrorIds.includes(id));
 }
 
-// Wrapper that adds a red error ring overlay when the node has a node-order error
-function ErrorRing({ show }: { show: boolean }) {
-  if (!show) return null;
+function CircleNode({
+  id,
+  data,
+  selected,
+  displayData,
+  tooltipTitle,
+  color,
+  label,
+  hasOrderError,
+}: {
+  id: string;
+  data: Record<string, unknown>;
+  selected?: boolean;
+  displayData: Record<string, unknown>;
+  tooltipTitle: string;
+  color: string;
+  label: React.ReactNode;
+  hasOrderError: boolean;
+}) {
   return (
-    <div
-      className="pointer-events-none absolute inset-0 rounded ring-2 ring-red-500 ring-offset-1 z-10"
-      title="Node order error: node numbers must be in ascending sequence"
-    />
+    <TooltipWrapper content={<DataList data={displayData} title={tooltipTitle} />}>
+      <div
+        className={clsx(
+          "w-9 h-9 rounded-full flex items-center justify-center transition-all relative group",
+          hasOrderError
+            ? "ring-4 ring-red-500 ring-offset-1"
+            : selected
+            ? "ring-2 ring-offset-1 ring-white/60"
+            : ""
+        )}
+        style={{ backgroundColor: color }}
+      >
+        <span className="text-[12px] font-bold text-white leading-none select-none">{label}</span>
+
+        <Handle type="target" id="t-top" position={Position.Top} className={HandleStyle} style={{ background: color }} />
+        <Handle type="source" id="s-top" position={Position.Top} className={HandleStyle} style={{ background: color }} />
+        <Handle type="target" id="t-bottom" position={Position.Bottom} className={HandleStyle} style={{ background: color }} />
+        <Handle type="source" id="s-bottom" position={Position.Bottom} className={HandleStyle} style={{ background: color }} />
+        <Handle type="target" id="t-left" position={Position.Left} className={HandleStyle} style={{ background: color }} />
+        <Handle type="source" id="s-left" position={Position.Left} className={HandleStyle} style={{ background: color }} />
+        <Handle type="target" id="t-right" position={Position.Right} className={HandleStyle} style={{ background: color }} />
+        <Handle type="source" id="s-right" position={Position.Right} className={HandleStyle} style={{ background: color }} />
+      </div>
+    </TooltipWrapper>
   );
 }
 
-// Reservoir Node
+// Reservoir Node — Deep Navy Blue
 export const ReservoirNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Reservoir Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/30" : selected ? "border-blue-700 ring-2 ring-blue-700/20" : "border-blue-600"
-      )}>
-        <span className="text-[12px] font-bold text-black leading-none">{data.label as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={HandleStyle} />
-        <Handle type="source" id="s-top" position={Position.Top} className={HandleStyle} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={HandleStyle} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={HandleStyle} />
-        <Handle type="target" id="t-left" position={Position.Left} className={HandleStyle} />
-        <Handle type="source" id="s-left" position={Position.Left} className={HandleStyle} />
-        <Handle type="target" id="t-right" position={Position.Right} className={HandleStyle} />
-        <Handle type="source" id="s-right" position={Position.Right} className={HandleStyle} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Reservoir Properties"
+      color="#1e3a8a"
+      label={data.label as React.ReactNode}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Basic Node (Simple Node)
+// Basic Node (Simple Node) — Royal Blue
 export const SimpleNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Node Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/30" : selected ? "border-blue-600 ring-2 ring-blue-600/20" : "border-blue-500"
-      )}>
-        <span className="text-[12px] font-bold text-black">N{data.nodeNumber as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={HandleStyle} />
-        <Handle type="source" id="s-top" position={Position.Top} className={HandleStyle} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={HandleStyle} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={HandleStyle} />
-        <Handle type="target" id="t-left" position={Position.Left} className={HandleStyle} />
-        <Handle type="source" id="s-left" position={Position.Left} className={HandleStyle} />
-        <Handle type="target" id="t-right" position={Position.Right} className={HandleStyle} />
-        <Handle type="source" id="s-right" position={Position.Right} className={HandleStyle} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Node Properties"
+      color="#1d4ed8"
+      label={<>N{data.nodeNumber as React.ReactNode}</>}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Junction Node
+// Junction Node — Deep Crimson
 export const JunctionNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Junction Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-4 ring-red-500/50" : selected ? "border-red-600 ring-2 ring-red-600/20" : "border-red-500"
-      )}>
-        <span className="text-[12px] font-bold text-black">J{data.nodeNumber as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-red-500")} />
-        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-red-500")} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Junction Properties"
+      color="#b91c1c"
+      label={<>J{data.nodeNumber as React.ReactNode}</>}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Surge Tank
+// Surge Tank — Dark Amber
 export const SurgeTankNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Surge Tank Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/30" : selected ? "border-orange-600 ring-2 ring-orange-600/20" : "border-orange-500"
-      )}>
-        <span className="text-[12px] font-bold text-black leading-none">{data.label as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-orange-500")} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Surge Tank Properties"
+      color="#b45309"
+      label={data.label as React.ReactNode}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Pump Node
+// Pump Node — Deep Purple
 export const PumpNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Pump Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/30" : selected ? "border-orange-600 ring-2 ring-orange-600/20" : "border-orange-500"
-      )}>
-        <span className="text-[12px] font-bold text-black leading-none">{data.label as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-orange-500")} />
-        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-orange-500")} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Pump Properties"
+      color="#6d28d9"
+      label={data.label as React.ReactNode}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Check Valve Node
+// Check Valve Node — Dark Emerald Green
 export const CheckValveNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Check Valve Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/30" : selected ? "border-violet-600 ring-2 ring-violet-600/20" : "border-violet-500"
-      )}>
-        <span className="text-[12px] font-bold text-black leading-none">{data.label as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-violet-500")} />
-        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-violet-500")} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Check Valve Properties"
+      color="#047857"
+      label={data.label as React.ReactNode}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Turbine Node
+// Turbine Node — Dark Cyan
 export const TurbineNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
-
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Turbine Properties" />}>
-      <div className={clsx(
-        "w-9 h-9 rounded-full border-2 shadow-sm flex items-center justify-center transition-all relative group bg-white",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/30" : selected ? "border-teal-600 ring-2 ring-teal-600/20" : "border-teal-500"
-      )}>
-        <span className="text-[12px] font-bold text-black leading-none">{data.label as React.ReactNode}</span>
-
-        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-teal-500")} />
-        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-teal-500")} />
-      </div>
-    </TooltipWrapper>
+    <CircleNode
+      id={id} data={data as Record<string, unknown>} selected={selected}
+      displayData={displayData as Record<string, unknown>}
+      tooltipTitle="Turbine Properties"
+      color="#0e7490"
+      label={data.label as React.ReactNode}
+      hasOrderError={hasOrderError}
+    />
   );
 });
 
-// Flow Boundary
+// Flow Boundary — Dark Forest Green
 export const FlowBoundaryNode = memo(({ id, data, selected }: NodeProps) => {
   const node = useNetworkStore(state => state.nodes.find(n => n.id === id));
   const displayData = node ? node.data : data;
   const hasOrderError = useNodeOrderError(id);
 
   return (
-    <TooltipWrapper content={<DataList data={displayData} title="Flow Boundary Properties" />}>
+    <TooltipWrapper content={<DataList data={displayData as Record<string, unknown>} title="Flow Boundary Properties" />}>
       <div className={clsx(
-        "p-2 rounded border shadow-sm flex items-center gap-2 transition-all bg-green-50 group relative",
-        hasOrderError ? "border-red-500 ring-2 ring-red-500/40" : selected ? "border-green-500 ring-1 ring-green-500/30" : "border-green-400"
+        "p-2 rounded border-2 flex items-center gap-2 transition-all group relative",
+        hasOrderError ? "border-red-500 ring-2 ring-red-500/40 bg-red-50" : selected ? "border-green-800 ring-1 ring-green-800/30 bg-green-900/10" : "border-green-800 bg-green-900/10"
       )}>
-        <ErrorRing show={hasOrderError} />
-        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-green-500")} />
-        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-green-500")} />
-        <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-green-600 border-b-[6px] border-b-transparent"></div>
+        <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="target" id="t-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="source" id="s-bottom" position={Position.Bottom} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="target" id="t-left" position={Position.Left} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="source" id="s-left" position={Position.Left} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-green-800")} />
+        <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-green-800")} />
+        <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-green-800 border-b-[6px] border-b-transparent"></div>
         <div>
-          <div className="text-xs font-bold text-green-800">{data.label as React.ReactNode}</div>
-          <div className="text-[10px] text-green-600">Q-Sched: {data.scheduleNumber as React.ReactNode}</div>
+          <div className="text-xs font-bold text-green-900">{data.label as React.ReactNode}</div>
+          <div className="text-[10px] text-green-800">Q-Sched: {data.scheduleNumber as React.ReactNode}</div>
         </div>
       </div>
     </TooltipWrapper>
