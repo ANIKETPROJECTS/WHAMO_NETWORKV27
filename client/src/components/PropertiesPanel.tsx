@@ -735,8 +735,74 @@ export function PropertiesPanel() {
               />
             </PropRow>
           </PropSection>
+        ) : (!isNode && (element.data?.type === 'conduit' || element.data?.type === 'dummy' || !element.data?.type)) ? (
+          /* HAMMER-style General block for conduit/dummy */
+          <>
+            <PropSection title="General">
+              <PropRow label="Label / ID">
+                <div>
+                  <Input
+                    id="label"
+                    data-testid="input-label"
+                    value={formData.label ?? ''}
+                    onChange={(e) => handleLabelChange(e.target.value)}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' }}
+                  />
+                  {(() => {
+                    const lbl = (formData.label as string) || '';
+                    const others = edges.filter(e => e.id !== selectedElementId && (e.data?.label as string) === lbl && (e.data?.type === 'conduit' || e.data?.type === 'dummy'));
+                    if (others.length > 0) {
+                      return (
+                        <div className="rounded-md bg-amber-50 border border-amber-300 px-2 py-1 flex items-start gap-1.5 mt-1" data-testid="warning-duplicate-label">
+                          <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+                          <p className="text-[10px] text-amber-700 leading-snug" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                            Label &quot;{lbl}&quot; already used by {others.length === 1 ? '1 other conduit' : `${others.length} other conduits`}.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  {profileApplied && (
+                    <p className="text-[10px] text-green-700 flex items-center gap-1 mt-1" data-testid="text-profile-applied">
+                      <CheckCircle2 className="h-3 w-3" /> Profile &quot;{profileApplied}&quot; applied
+                    </p>
+                  )}
+                </div>
+              </PropRow>
+              <PropRow label="Comment" noBorder>
+                <Input
+                  id="comment"
+                  placeholder="Internal comment"
+                  value={formData.comment ?? ''}
+                  onChange={(e) => handleChange('comment', e.target.value)}
+                  className="h-7 text-[12px] font-medium text-black border-slate-300"
+                  style={{ fontFamily: 'Poppins, sans-serif' }}
+                />
+              </PropRow>
+            </PropSection>
+            <PropSection title="Connection Type">
+              <PropRow label="Type" noBorder>
+                <RadioGroup
+                  value={formData.type || 'conduit'}
+                  onValueChange={(v) => handleChange('type', v)}
+                  className="flex gap-5"
+                >
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="conduit" id="conduit" />
+                    <span className="text-[13px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Conduit</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="dummy" id="dummy" />
+                    <span className="text-[13px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Dummy Pipe</span>
+                  </label>
+                </RadioGroup>
+              </PropRow>
+            </PropSection>
+          </>
         ) : (
-          /* Legacy General block for non-reservoir elements */
+          /* Legacy General block for nodes, pump, turbine, etc. */
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>General</h4>
             <div className="grid gap-2">
@@ -747,21 +813,6 @@ export function PropertiesPanel() {
                 value={formData.label ?? ''}
                 onChange={(e) => isNode ? handleChange('label', e.target.value) : handleLabelChange(e.target.value)}
               />
-              {!isNode && (() => {
-                const lbl = (formData.label as string) || '';
-                const others = edges.filter(e => e.id !== selectedElementId && (e.data?.label as string) === lbl && (e.data?.type === 'conduit' || e.data?.type === 'dummy'));
-                if (others.length > 0) {
-                  return (
-                    <div className="rounded-md bg-amber-50 border border-amber-300 px-2.5 py-1.5 flex items-start gap-1.5" data-testid="warning-duplicate-label">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                      <p className="text-[10px] text-amber-700 leading-snug">
-                        Label &quot;{lbl}&quot; is already used by {others.length === 1 ? '1 other conduit' : `${others.length} other conduits`}.
-                      </p>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
               {profileApplied && (
                 <p className="text-[10px] text-green-600 flex items-center gap-1" data-testid="text-profile-applied">
                   <CheckCircle2 className="h-3 w-3" />
@@ -781,31 +832,11 @@ export function PropertiesPanel() {
           </div>
         )}
 
-        {element.data?.type !== 'reservoir' && <Separator />}
+        {element.data?.type !== 'reservoir' && !(!isNode && (element.data?.type === 'conduit' || element.data?.type === 'dummy' || !element.data?.type)) && <Separator />}
 
         {/* Specific Properties based on Type */}
         <div className="space-y-4">
-          {element.data?.type !== 'reservoir' && <h4 className="text-sm font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Parameters</h4>}
-          
-          {!isNode && (formData.type === 'conduit' || formData.type === 'dummy' || !formData.type) && (
-            <div className="grid gap-2 mb-4">
-              <Label>Connection Type</Label>
-              <RadioGroup 
-                value={formData.type || 'conduit'} 
-                onValueChange={(v) => handleChange('type', v)}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="conduit" id="conduit" />
-                  <Label htmlFor="conduit">Conduit</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="dummy" id="dummy" />
-                  <Label htmlFor="dummy">Dummy Pipe</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
+          {element.data?.type !== 'reservoir' && !(!isNode && (element.data?.type === 'conduit' || element.data?.type === 'dummy' || !element.data?.type)) && <h4 className="text-sm font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Parameters</h4>}
 
           {isNode && (element.data?.type === 'node' || element.data?.type === 'junction' || element.data?.type === 'reservoir' || element.data?.type === 'surgeTank' || element.data?.type === 'flowBoundary' || formData.type_st) && (
             <>
@@ -891,23 +922,22 @@ export function PropertiesPanel() {
 
                     {/* Boundary Condition section */}
                     <PropSection title="Boundary Condition">
-                      <div className="px-3 py-3 space-y-2">
-                        <span className="text-[13px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Mode</span>
+                      <PropRow label="Mode" noBorder>
                         <RadioGroup
                           value={formData.mode || 'fixed'}
                           onValueChange={(v) => handleChange('mode', v)}
-                          className="flex flex-col gap-2.5 pt-1"
+                          className="flex gap-5"
                         >
-                          <label className="flex items-center gap-2.5 cursor-pointer group">
+                          <label className="flex items-center gap-2 cursor-pointer">
                             <RadioGroupItem value="fixed" id="res-mode-fixed" />
-                            <span className="text-[13px] font-semibold text-black group-hover:text-blue-700 transition-colors" style={{ fontFamily: 'Poppins, sans-serif' }}>Fixed HW</span>
+                            <span className="text-[13px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Fixed HW</span>
                           </label>
-                          <label className="flex items-center gap-2.5 cursor-pointer group">
+                          <label className="flex items-center gap-2 cursor-pointer">
                             <RadioGroupItem value="schedule" id="res-mode-schedule" />
-                            <span className="text-[13px] font-semibold text-black group-hover:text-blue-700 transition-colors" style={{ fontFamily: 'Poppins, sans-serif' }}>H Schedule</span>
+                            <span className="text-[13px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>H Schedule</span>
                           </label>
                         </RadioGroup>
-                      </div>
+                      </PropRow>
                     </PropSection>
 
                     {/* Fixed elevation or schedule */}
@@ -1008,7 +1038,7 @@ export function PropertiesPanel() {
                               </div>
                               <button
                                 type="button"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1"
+                                className="text-red-500 hover:text-red-700 p-1 shrink-0 flex items-center justify-center"
                                 onClick={() => {
                                   const schedNum = formData.hScheduleNumber || 1;
                                   const currentSched = hSchedules.find(s => s.number === schedNum);
@@ -1017,7 +1047,12 @@ export function PropertiesPanel() {
                                   }
                                 }}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <img
+                                  src={deleteIconImg}
+                                  alt="Delete"
+                                  className="h-3.5 w-3.5 object-contain"
+                                  style={{ filter: 'brightness(0) saturate(100%) invert(23%) sepia(95%) saturate(2000%) hue-rotate(340deg) brightness(100%) contrast(110%)' }}
+                                />
                               </button>
                             </div>
                           ))}
@@ -1680,73 +1715,26 @@ export function PropertiesPanel() {
 
           {!isNode && (element.data?.type === 'conduit' || !element.data?.type) && (
             <>
-              <div className="flex items-center space-x-2 mb-4">
-                <Checkbox 
-                  id="variable" 
-                  checked={formData.variable || false} 
-                  onCheckedChange={(checked) => handleChange('variable', !!checked)}
-                />
-                <Label htmlFor="variable" className="font-semibold text-primary">VARIABLE (optional)</Label>
-              </div>
-
-              {formData.variable && (
-                <div className="grid grid-cols-2 gap-4 p-3 bg-muted/30 rounded-md border border-border/50 mb-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="distance">DISTANCE ({currentUnit === 'SI' ? 'm' : 'ft'})</Label>
-                    <NumericInput 
-                      id="distance" 
-                      value={formData.distance} 
-                      onValueChange={(v) => handleChange('distance', v)} 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="area">AREA ({currentUnit === 'SI' ? 'm²' : 'ft²'})</Label>
-                    <NumericInput 
-                      id="area" 
-                      value={formData.area} 
-                      onValueChange={(v) => handleChange('area', v)} 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="d">D ({currentUnit === 'SI' ? 'm' : 'ft'})</Label>
-                    <NumericInput 
-                      id="d" 
-                      value={formData.d} 
-                      onValueChange={(v) => handleChange('d', v)} 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="a">A ({currentUnit === 'SI' ? 'm²' : 'ft²'})</Label>
-                    <NumericInput 
-                      id="a" 
-                      value={formData.a} 
-                      onValueChange={(v) => handleChange('a', v)} 
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="length">Length ({currentUnit === 'SI' ? 'm' : 'ft'})</Label>
-                  <NumericInput 
-                    id="length" 
-                    value={formData.length} 
-                    onValueChange={(v) => handleChange('length', v)} 
+              {/* ── GEOMETRY ── */}
+              <PropSection title="Geometry">
+                <PropRow label={`Length (${currentUnit === 'SI' ? 'm' : 'ft'})`}>
+                  <NumericInput
+                    id="length"
+                    value={formData.length}
+                    onValueChange={(v) => handleChange('length', v)}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' } as any}
                   />
-                </div>
+                </PropRow>
                 {!formData.variable && (
-                  <div className="space-y-2">
-                    <Label htmlFor="diam">Diameter ({currentUnit === 'SI' ? 'm' : 'ft'})</Label>
-                    <NumericInput 
-                      id="diam" 
-                      value={formData.diameter} 
+                  <PropRow label={`Diameter (${currentUnit === 'SI' ? 'm' : 'ft'})`}>
+                    <NumericInput
+                      id="diam"
+                      value={formData.diameter}
                       onValueChange={(v) => {
                         const newDiam = parseFloat(v);
                         handleChange('diameter', v);
-
                         if (!isNaN(newDiam) && newDiam > 0) {
-                          // Recalculate wave speed (celerity) if E and WT are set
                           const C0 = currentUnit === 'SI' ? 1440 : 4720;
                           const Kw = currentUnit === 'SI' ? 2.07e9 : 3e5;
                           const E  = parseFloat(formData.pipeE) || 0;
@@ -1755,8 +1743,6 @@ export function PropertiesPanel() {
                             const c = C0 / Math.sqrt(1 + (Kw / E) * (newDiam / WT));
                             handleChange('celerity', parseFloat(c.toFixed(4)).toString());
                           }
-
-                          // Recalculate friction from Manning's n (preferred) or vice-versa
                           const K = currentUnit === 'SI' ? 124.58 : 185;
                           const n = parseFloat(formData.manningsN);
                           if (!isNaN(n) && n > 0) {
@@ -1770,34 +1756,67 @@ export function PropertiesPanel() {
                             }
                           }
                         }
-                      }} 
+                      }}
+                      className="h-7 text-[12px] font-medium text-black border-slate-300"
+                      style={{ fontFamily: 'Poppins, sans-serif' } as any}
                     />
+                  </PropRow>
+                )}
+                <PropRow label="Variable Cross-section" noBorder>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      id="variable"
+                      checked={formData.variable || false}
+                      onCheckedChange={(checked) => handleChange('variable', !!checked)}
+                    />
+                    <span className="text-[12px] font-medium text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Enable VARIABLE</span>
+                  </label>
+                </PropRow>
+                {formData.variable && (
+                  <div className="px-3 pb-3 grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Distance ({currentUnit === 'SI' ? 'm' : 'ft'})</div>
+                      <NumericInput id="distance" value={formData.distance} onValueChange={(v) => handleChange('distance', v)} className="h-7 text-[11px] border-slate-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Area ({currentUnit === 'SI' ? 'm²' : 'ft²'})</div>
+                      <NumericInput id="area" value={formData.area} onValueChange={(v) => handleChange('area', v)} className="h-7 text-[11px] border-slate-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>D ({currentUnit === 'SI' ? 'm' : 'ft'})</div>
+                      <NumericInput id="d" value={formData.d} onValueChange={(v) => handleChange('d', v)} className="h-7 text-[11px] border-slate-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>A ({currentUnit === 'SI' ? 'm²' : 'ft²'})</div>
+                      <NumericInput id="a" value={formData.a} onValueChange={(v) => handleChange('a', v)} className="h-7 text-[11px] border-slate-300" />
+                    </div>
                   </div>
                 )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="celerity">Wave Speed ({currentUnit === 'SI' ? 'm/s' : 'ft/s'})</Label>
+              </PropSection>
+
+              {/* ── HYDRAULICS ── */}
+              <PropSection title="Hydraulics">
+                <PropRow label={
+                  <div className="flex items-center gap-1.5">
+                    <span>Wave Speed ({currentUnit === 'SI' ? 'm/s' : 'ft/s'})</span>
                     {(parseFloat(formData.pipeE) > 0 && parseFloat(formData.pipeWT) > 0)
-                      ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-medium">Auto</span>
-                      : <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium" title="Set E and WT below to auto-calculate">Manual — set E &amp; WT to auto</span>
-                    }
+                      ? <span className="text-[9px] px-1 py-0.5 rounded bg-green-100 text-green-700 font-semibold">Auto</span>
+                      : <span className="text-[9px] px-1 py-0.5 rounded bg-amber-100 text-amber-700 font-semibold">Manual</span>}
                   </div>
-                  <NumericInput 
-                    id="celerity" 
-                    value={formData.celerity} 
-                    onValueChange={(v) => {
-                      handleChange('celerity', v);
-                    }}
+                }>
+                  <NumericInput
+                    id="celerity"
+                    value={formData.celerity}
+                    onValueChange={(v) => handleChange('celerity', v)}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' } as any}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="friction">Friction (f)</Label>
-                  <NumericInput 
-                    id="friction" 
+                </PropRow>
+                <PropRow label="Friction (f)" noBorder>
+                  <NumericInput
+                    id="friction"
                     data-testid="input-friction"
-                    value={formData.friction} 
+                    value={formData.friction}
                     onValueChange={(v) => {
                       handleChange('friction', v);
                       const f = parseFloat(v);
@@ -1808,10 +1827,13 @@ export function PropertiesPanel() {
                         handleChange('manningsN', parseFloat(n.toFixed(6)).toString());
                       }
                     }}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' } as any}
                   />
-                </div>
-              </div>
+                </PropRow>
+              </PropSection>
 
+              {/* ── PIPE MATERIAL ── */}
               {(() => {
                 const matId = formData.materialId ? Number(formData.materialId) : null;
                 const mat = matId != null ? PIPE_MATERIALS_BY_ID[matId] : null;
@@ -1819,15 +1841,10 @@ export function PropertiesPanel() {
                   const all = forceAll || applyMaterialToAllConduits;
                   if (idStr === '__none__') {
                     handleChange('materialId', '');
-                    // Propagate "clear" to siblings (same label) or all conduits when toggle is on
                     const lbl = (formData.label as string) || '';
                     if (all || lbl) {
                       edges
-                        .filter(e =>
-                          e.id !== selectedElementId &&
-                          e.data?.type === 'conduit' &&
-                          (all || (e.data?.label as string) === lbl)
-                        )
+                        .filter(e => e.id !== selectedElementId && e.data?.type === 'conduit' && (all || (e.data?.label as string) === lbl))
                         .forEach(e => updateEdgeData(e.id, { materialId: '' } as any));
                     }
                     return;
@@ -1836,22 +1853,16 @@ export function PropertiesPanel() {
                   const m = PIPE_MATERIALS_BY_ID[id];
                   if (!m) return;
                   handleChange('materialId', String(id));
-                  // Manning's n
                   const n = m.manningsN;
                   handleChange('manningsN', String(n));
-                  // Young's Modulus (E) — pick unit
                   const eVal = currentUnit === 'SI' ? m.youngsModulus_Pa : m.youngsModulus_psi;
-                  if (eVal > 0) {
-                    handleChange('pipeE', String(eVal));
-                  }
-                  // Recompute friction f from Manning's n if diameter present
+                  if (eVal > 0) handleChange('pipeE', String(eVal));
                   const D = parseFloat(formData.diameter) || 0;
                   if (D > 0 && n > 0) {
                     const K = currentUnit === 'SI' ? 124.58 : 185;
                     const f = (K * n * n) / Math.pow(D, 1 / 3);
                     handleChange('friction', parseFloat(f.toFixed(6)).toString());
                   }
-                  // Recompute wave speed (celerity) if E, WT, D all present
                   const WT = parseFloat(formData.pipeWT) || 0;
                   if (eVal > 0 && WT > 0 && D > 0) {
                     const C0 = currentUnit === 'SI' ? 1440 : 4720;
@@ -1859,23 +1870,13 @@ export function PropertiesPanel() {
                     const c = C0 / Math.sqrt(1 + (Kw / eVal) * (D / WT));
                     handleChange('celerity', parseFloat(c.toFixed(4)).toString());
                   }
-
-                  // Propagate: by default to siblings sharing the same label;
-                  // when "Apply to all conduits" is checked, propagate to every conduit.
                   const lbl = (formData.label as string) || '';
                   if (all || lbl) {
-                    const siblings = edges.filter(e =>
-                      e.id !== selectedElementId &&
-                      e.data?.type === 'conduit' &&
-                      (all || (e.data?.label as string) === lbl)
-                    );
+                    const siblings = edges.filter(e => e.id !== selectedElementId && e.data?.type === 'conduit' && (all || (e.data?.label as string) === lbl));
                     siblings.forEach(e => {
                       const eUnit: UnitSystem = (e.data?.unit as UnitSystem) || currentUnit;
                       const eEval = eUnit === 'SI' ? m.youngsModulus_Pa : m.youngsModulus_psi;
-                      const sibUpdate: any = {
-                        materialId: String(id),
-                        manningsN: n,
-                      };
+                      const sibUpdate: any = { materialId: String(id), manningsN: n };
                       if (eEval > 0) sibUpdate.pipeE = eEval;
                       const eD = parseFloat(String((e.data as any)?.diameter)) || 0;
                       if (eD > 0 && n > 0) {
@@ -1901,250 +1902,170 @@ export function PropertiesPanel() {
                   }
                 };
                 return (
-                  <div className="space-y-3 rounded-md border border-dashed p-3 bg-blue-50/30">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <Label htmlFor="pipe-material" className="font-medium">Pipe Material</Label>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Select a material to auto-fill Manning's n and Young's Modulus (E).
-                        </p>
-                      </div>
-                    </div>
-                    <Popover open={materialPickerOpen} onOpenChange={setMaterialPickerOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="pipe-material"
-                          data-testid="select-pipe-material"
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={materialPickerOpen}
-                          className="w-full justify-between bg-white font-normal"
-                        >
-                          <span className={mat ? '' : 'text-muted-foreground'}>
-                            {mat ? mat.label : '-- Select pipe material --'}
-                          </span>
-                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
-                        <Command
-                          filter={(value, search) => {
-                            return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
-                          }}
-                        >
-                          <CommandInput
-                            placeholder="Search material..."
-                            data-testid="input-material-search"
-                          />
-                          <CommandList className="max-h-64">
-                            <CommandEmpty>No material found.</CommandEmpty>
-                            <CommandGroup>
-                              <CommandItem
-                                value="-- None (manual entry) --"
-                                onSelect={() => {
-                                  applyMaterial('__none__');
-                                  setMaterialPickerOpen(false);
-                                }}
-                                data-testid="material-option-none"
-                              >
-                                -- None (manual entry) --
-                              </CommandItem>
-                              {PIPE_MATERIALS.map(m => (
-                                <CommandItem
-                                  key={m.id}
-                                  value={m.label}
-                                  onSelect={() => {
-                                    applyMaterial(String(m.id));
-                                    setMaterialPickerOpen(false);
-                                  }}
-                                  data-testid={`material-option-${m.id}`}
-                                >
-                                  {m.label}
+                  <PropSection title="Pipe Material">
+                    <div className="px-3 pb-3 space-y-3">
+                      <Popover open={materialPickerOpen} onOpenChange={setMaterialPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="pipe-material"
+                            data-testid="select-pipe-material"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={materialPickerOpen}
+                            className="w-full justify-between bg-white font-semibold text-[12px] text-black border-slate-300 h-8"
+                            style={{ fontFamily: 'Poppins, sans-serif' }}
+                          >
+                            <span className={mat ? 'text-black' : 'text-slate-400 font-normal'}>
+                              {mat ? mat.label : '— Select pipe material —'}
+                            </span>
+                            <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                          <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+                            <CommandInput placeholder="Search material..." data-testid="input-material-search" />
+                            <CommandList className="max-h-64">
+                              <CommandEmpty>No material found.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem value="-- None (manual entry) --" onSelect={() => { applyMaterial('__none__'); setMaterialPickerOpen(false); }} data-testid="material-option-none">
+                                  — None (manual entry) —
                                 </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="apply-mat-all"
-                        data-testid="checkbox-apply-material-all"
-                        checked={applyMaterialToAllConduits}
-                        onCheckedChange={(c) => {
-                          const checked = !!c;
-                          setApplyMaterialToAllConduits(checked);
-                          // If turning ON and the current conduit already has a material,
-                          // immediately push it to every conduit in the network.
-                          if (checked && formData.materialId) {
-                            applyMaterial(String(formData.materialId), true);
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor="apply-mat-all"
-                        className="text-xs font-normal cursor-pointer"
-                      >
-                        Apply selected material to <strong>all conduits</strong> in the network
-                      </Label>
+                                {PIPE_MATERIALS.map(m => (
+                                  <CommandItem key={m.id} value={m.label} onSelect={() => { applyMaterial(String(m.id)); setMaterialPickerOpen(false); }} data-testid={`material-option-${m.id}`}>
+                                    {m.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          id="apply-mat-all"
+                          data-testid="checkbox-apply-material-all"
+                          checked={applyMaterialToAllConduits}
+                          onCheckedChange={(c) => {
+                            const checked = !!c;
+                            setApplyMaterialToAllConduits(checked);
+                            if (checked && formData.materialId) applyMaterial(String(formData.materialId), true);
+                          }}
+                        />
+                        <span className="text-[11px] font-medium text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                          Apply to <strong>all conduits</strong> in network
+                        </span>
+                      </label>
+                      {mat && (
+                        <div className="rounded border border-slate-200 bg-slate-50 overflow-hidden">
+                          <button
+                            type="button"
+                            data-testid="btn-toggle-material-properties"
+                            onClick={() => setShowMaterialProps(v => !v)}
+                            className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold text-black hover:bg-slate-100 transition-colors"
+                            style={{ fontFamily: 'Poppins, sans-serif' }}
+                          >
+                            <span>{mat.label} — properties</span>
+                            {showMaterialProps ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                          </button>
+                          {showMaterialProps && (
+                            <div data-testid="material-properties-summary" className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] px-3 pb-2.5 pt-1 border-t border-slate-200">
+                              <div className="text-black font-medium">Manning's n</div>
+                              <div className="font-mono text-right text-black" data-testid="mat-prop-mannings">{mat.manningsN}</div>
+                              <div className="text-black font-medium">Kutter's n</div>
+                              <div className="font-mono text-right text-black">{mat.kuttersN}</div>
+                              <div className="text-black font-medium">Hazen-Williams C</div>
+                              <div className="font-mono text-right text-black">{mat.hazenWilliamsC}</div>
+                              <div className="text-black font-medium">Modified H-W CR</div>
+                              <div className="font-mono text-right text-black">{mat.modifiedHWCR}</div>
+                              <div className="text-black font-medium">Roughness ε ({currentUnit === 'SI' ? 'm' : 'ft'})</div>
+                              <div className="font-mono text-right text-black">{currentUnit === 'SI' ? mat.roughnessHeight_m : mat.roughnessHeight_ft}</div>
+                              <div className="text-black font-medium">Young's E ({currentUnit === 'SI' ? 'Pa' : 'psi'})</div>
+                              <div className="font-mono text-right text-black" data-testid="mat-prop-e">
+                                {(() => { const v = currentUnit === 'SI' ? mat.youngsModulus_Pa : mat.youngsModulus_psi; if (!v) return <span className="text-amber-600">n/a</span>; return v.toLocaleString(undefined, { maximumFractionDigits: 2 }); })()}
+                              </div>
+                              <div className="text-black font-medium">Poisson's Ratio</div>
+                              <div className="font-mono text-right text-black">{mat.poissonsRatio || <span className="text-amber-600">n/a</span>}</div>
+                              <div className="col-span-2 text-[10px] text-slate-500 italic mt-1 pt-1 border-t border-slate-200">
+                                Manning's n and E auto-filled. Enter WT below to compute wave speed.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-
-                    {mat && (
-                      <div className="rounded bg-white border overflow-hidden">
-                        <button
-                          type="button"
-                          data-testid="btn-toggle-material-properties"
-                          onClick={() => setShowMaterialProps(v => !v)}
-                          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors"
-                        >
-                          <span>{mat.label} — properties</span>
-                          {showMaterialProps
-                            ? <ChevronDown className="h-3.5 w-3.5" />
-                            : <ChevronRight className="h-3.5 w-3.5" />}
-                        </button>
-                        {showMaterialProps && (
-                      <div
-                        data-testid="material-properties-summary"
-                        className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs px-3 pb-2.5 pt-1 border-t"
-                      >
-                        <div className="col-span-2 font-semibold text-foreground border-b pb-1 mb-1">
-                          {mat.label} — properties
-                        </div>
-                        <div className="text-muted-foreground">Manning's n</div>
-                        <div className="font-mono text-right" data-testid="mat-prop-mannings">{mat.manningsN}</div>
-
-                        <div className="text-muted-foreground">Kutter's n</div>
-                        <div className="font-mono text-right">{mat.kuttersN}</div>
-
-                        <div className="text-muted-foreground">Hazen-Williams C</div>
-                        <div className="font-mono text-right">{mat.hazenWilliamsC}</div>
-
-                        <div className="text-muted-foreground">Modified H-W CR</div>
-                        <div className="font-mono text-right">{mat.modifiedHWCR}</div>
-
-                        <div className="text-muted-foreground">
-                          Roughness ε ({currentUnit === 'SI' ? 'm' : 'ft'})
-                        </div>
-                        <div className="font-mono text-right">
-                          {currentUnit === 'SI' ? mat.roughnessHeight_m : mat.roughnessHeight_ft}
-                        </div>
-
-                        <div className="text-muted-foreground">
-                          Young's Modulus E ({currentUnit === 'SI' ? 'Pa' : 'psi'})
-                        </div>
-                        <div className="font-mono text-right" data-testid="mat-prop-e">
-                          {(() => {
-                            const v = currentUnit === 'SI' ? mat.youngsModulus_Pa : mat.youngsModulus_psi;
-                            if (!v) return <span className="text-amber-600">n/a</span>;
-                            return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
-                          })()}
-                        </div>
-
-                        <div className="text-muted-foreground">Poisson's Ratio</div>
-                        <div className="font-mono text-right">
-                          {mat.poissonsRatio || <span className="text-amber-600">n/a</span>}
-                        </div>
-
-                        <div className="col-span-2 text-[10px] text-muted-foreground italic mt-1 pt-1 border-t">
-                          Manning's n and E have been auto-filled below. Wall thickness (WT) still needs to be entered to compute wave speed.
-                        </div>
-                      </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  </PropSection>
                 );
               })()}
 
-              <div className="space-y-3 rounded-md border border-dashed p-3">
-                <div>
-                  <Label className="font-medium">Pipe Wall Properties (E &amp; WT)</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Enter both <strong>E</strong> and <strong>WT</strong> to calculate wave speed.
-                    Diameter is used automatically.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="pipe-e">
-                      E ({currentUnit === 'SI' ? 'Pa' : 'psi'})
-                    </Label>
-                    <NumericInput
-                      id="pipe-e"
-                      data-testid="input-pipe-e"
-                      placeholder={currentUnit === 'SI' ? 'e.g. 2.07e11' : 'e.g. 30000000'}
-                      value={formData.pipeE}
-                      onValueChange={(v) => {
-                        handleChange('pipeE', v);
-                        const E  = parseFloat(v);
-                        const C0 = currentUnit === 'SI' ? 1440 : 4720;
-                        const Kw = currentUnit === 'SI' ? 2.07e9 : 3e5;
-                        const D  = parseFloat(formData.diameter) || 0;
-                        const WT = parseFloat(formData.pipeWT) || 0;
-                        if (!isNaN(E) && E > 0 && WT > 0 && D > 0) {
-                          const c = C0 / Math.sqrt(1 + (Kw / E) * (D / WT));
-                          handleChange('celerity', parseFloat(c.toFixed(4)).toString());
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pipe-wt">
-                      WT ({currentUnit === 'SI' ? 'm' : 'ft'})
-                    </Label>
-                    <NumericInput
-                      id="pipe-wt"
-                      data-testid="input-pipe-wt"
-                      placeholder={currentUnit === 'SI' ? 'e.g. 0.006' : 'e.g. 0.02'}
-                      value={formData.pipeWT}
-                      onValueChange={(v) => {
-                        handleChange('pipeWT', v);
-                        const WT = parseFloat(v);
-                        const C0 = currentUnit === 'SI' ? 1440 : 4720;
-                        const Kw = currentUnit === 'SI' ? 2.07e9 : 3e5;
-                        const D  = parseFloat(formData.diameter) || 0;
-                        const E  = parseFloat(formData.pipeE) || 0;
-                        if (!isNaN(WT) && WT > 0 && E > 0 && D > 0) {
-                          const c = C0 / Math.sqrt(1 + (Kw / E) * (D / WT));
-                          handleChange('celerity', parseFloat(c.toFixed(4)).toString());
-                        }
-                      }}
-                    />
+              {/* ── WALL PROPERTIES ── */}
+              <PropSection title="Wall Properties (E &amp; WT)">
+                <PropRow label={`E (${currentUnit === 'SI' ? 'Pa' : 'psi'})`}>
+                  <NumericInput
+                    id="pipe-e"
+                    data-testid="input-pipe-e"
+                    placeholder={currentUnit === 'SI' ? 'e.g. 2.07e11' : 'e.g. 30000000'}
+                    value={formData.pipeE}
+                    onValueChange={(v) => {
+                      handleChange('pipeE', v);
+                      const E = parseFloat(v);
+                      const C0 = currentUnit === 'SI' ? 1440 : 4720;
+                      const Kw = currentUnit === 'SI' ? 2.07e9 : 3e5;
+                      const D = parseFloat(formData.diameter) || 0;
+                      const WT = parseFloat(formData.pipeWT) || 0;
+                      if (!isNaN(E) && E > 0 && WT > 0 && D > 0) {
+                        const c = C0 / Math.sqrt(1 + (Kw / E) * (D / WT));
+                        handleChange('celerity', parseFloat(c.toFixed(4)).toString());
+                      }
+                    }}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' } as any}
+                  />
+                </PropRow>
+                <PropRow label={`WT (${currentUnit === 'SI' ? 'm' : 'ft'})`}>
+                  <NumericInput
+                    id="pipe-wt"
+                    data-testid="input-pipe-wt"
+                    placeholder={currentUnit === 'SI' ? 'e.g. 0.006' : 'e.g. 0.02'}
+                    value={formData.pipeWT}
+                    onValueChange={(v) => {
+                      handleChange('pipeWT', v);
+                      const WT = parseFloat(v);
+                      const C0 = currentUnit === 'SI' ? 1440 : 4720;
+                      const Kw = currentUnit === 'SI' ? 2.07e9 : 3e5;
+                      const D = parseFloat(formData.diameter) || 0;
+                      const E = parseFloat(formData.pipeE) || 0;
+                      if (!isNaN(WT) && WT > 0 && E > 0 && D > 0) {
+                        const c = C0 / Math.sqrt(1 + (Kw / E) * (D / WT));
+                        handleChange('celerity', parseFloat(c.toFixed(4)).toString());
+                      }
+                    }}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' } as any}
+                  />
+                </PropRow>
+                <div className="px-3 pb-3">
+                  <div className="rounded bg-slate-100 px-3 py-2 text-[11px] text-black font-medium" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    <span>{currentUnit === 'SI' ? 'c = 1440 / √(1 + (2.07·10⁹/E)·(D/WT))' : 'c = 4720 / √(1 + (3·10⁵/E)·(D/WT))'}</span>
+                    {formData.celerity && (formData.pipeE || formData.pipeWT) ? (
+                      <span className="ml-2 font-bold text-blue-700">= {parseFloat(Number(formData.celerity).toFixed(4))} {currentUnit === 'SI' ? 'm/s' : 'ft/s'}</span>
+                    ) : null}
                   </div>
                 </div>
-                <div className="rounded bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  <span>
-                    {currentUnit === 'SI'
-                      ? 'c = 1440 / √(1 + (2.07·10⁹/E) · (D/WT))'
-                      : 'c = 4720 / √(1 + (3·10⁵/E) · (D/WT))'}
-                  </span>
-                  {formData.celerity && (formData.pipeE || formData.pipeWT) ? (
-                    <span className="ml-2 font-semibold text-foreground">
-                      = {parseFloat(Number(formData.celerity).toFixed(4))} {currentUnit === 'SI' ? 'm/s' : 'ft/s'}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+              </PropSection>
 
-              <div className="space-y-3 rounded-md border border-dashed p-3">
-                <div className="space-y-2">
-                  <Label htmlFor="mannings-n" className="font-medium">Manning's Coefficient (n)</Label>
+              {/* ── MANNING'S n ── */}
+              <PropSection title="Manning's Coefficient">
+                <PropRow label="n" noBorder>
                   <NumericInput
                     id="mannings-n"
                     data-testid="input-mannings-n"
                     placeholder="e.g. 0.013"
                     value={(() => {
-                      if (formData.manningsN != null && formData.manningsN !== '') {
-                        return formData.manningsN;
-                      }
+                      if (formData.manningsN != null && formData.manningsN !== '') return formData.manningsN;
                       const f = parseFloat(formData.friction) || 0;
                       const diam = parseFloat(formData.diameter) || 0;
                       const K = currentUnit === 'SI' ? 124.58 : 185;
-                      if (f > 0 && diam > 0) {
-                        return parseFloat(Math.sqrt((f * Math.pow(diam, 1 / 3)) / K).toFixed(6));
-                      }
+                      if (f > 0 && diam > 0) return parseFloat(Math.sqrt((f * Math.pow(diam, 1 / 3)) / K).toFixed(6));
                       return '';
                     })()}
                     onValueChange={(v) => {
@@ -2159,69 +2080,62 @@ export function PropertiesPanel() {
                         }
                       }
                     }}
+                    className="h-7 text-[12px] font-medium text-black border-slate-300"
+                    style={{ fontFamily: 'Poppins, sans-serif' } as any}
                   />
-                </div>
-                <div className="rounded bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  <span>f = {currentUnit === 'SI' ? '124.58' : '185'} · n² / D<sup>1/3</sup></span>
-                  {formData.friction ? (
-                    <span className="ml-2 font-semibold text-foreground">
-                      = {parseFloat(Number(formData.friction).toFixed(6))}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="segments">Num Segments</Label>
-                <div className="flex items-center gap-2">
-                  <NumericInput 
-                    id="segments" 
-                    className="flex-1"
-                    value={formData.numSegments ?? 1} 
-                    onValueChange={(v) => handleChange('numSegments', v)} 
-                  />
-                  <div className="flex items-center gap-2 ml-2">
-                    <Checkbox 
-                      id="includeNumSeg" 
-                      checked={formData.includeNumSegments !== false} 
-                      onCheckedChange={(checked) => handleChange('includeNumSegments', !!checked)}
-                    />
-                    <Label htmlFor="includeNumSeg" className="text-xs whitespace-nowrap">Include in .INP</Label>
+                </PropRow>
+                <div className="px-3 pb-3">
+                  <div className="rounded bg-slate-100 px-3 py-2 text-[11px] text-black font-medium" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    <span>f = {currentUnit === 'SI' ? '124.58' : '185'} · n² / D<sup>1/3</sup></span>
+                    {formData.friction ? <span className="ml-2 font-bold text-blue-700">= {parseFloat(Number(formData.friction).toFixed(6))}</span> : null}
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2 my-2">
-                <Checkbox 
-                  id="hasAddedLoss" 
-                  checked={formData.hasAddedLoss || false} 
-                  onCheckedChange={(checked) => handleChange('hasAddedLoss', !!checked)}
-                />
-                <Label htmlFor="hasAddedLoss" className="font-semibold text-primary">Include ADDEDLOSS</Label>
-              </div>
+              </PropSection>
 
-              {formData.hasAddedLoss && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cplus">CPLUS (opt)</Label>
-                    <NumericInput 
-                      id="cplus" 
-                      placeholder="0.0"
-                      value={formData.cplus} 
-                      onValueChange={(v) => handleChange('cplus', v === '' ? undefined : v)} 
+              {/* ── ADVANCED ── */}
+              <PropSection title="Advanced">
+                <PropRow label="Num Segments">
+                  <div className="flex items-center gap-2">
+                    <NumericInput
+                      id="segments"
+                      value={formData.numSegments ?? 1}
+                      onValueChange={(v) => handleChange('numSegments', v)}
+                      className="h-7 text-[12px] font-medium text-black border-slate-300 flex-1"
+                      style={{ fontFamily: 'Poppins, sans-serif' } as any}
                     />
+                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                      <Checkbox
+                        id="includeNumSeg"
+                        checked={formData.includeNumSegments !== false}
+                        onCheckedChange={(checked) => handleChange('includeNumSegments', !!checked)}
+                      />
+                      <span className="text-[11px] font-medium text-black whitespace-nowrap" style={{ fontFamily: 'Poppins, sans-serif' }}>In .INP</span>
+                    </label>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cminus">CMINUS (opt)</Label>
-                    <NumericInput 
-                      id="cminus" 
-                      placeholder="0.0"
-                      value={formData.cminus} 
-                      onValueChange={(v) => handleChange('cminus', v === '' ? undefined : v)} 
+                </PropRow>
+                <PropRow label="Added Loss" noBorder={!formData.hasAddedLoss}>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      id="hasAddedLoss"
+                      checked={formData.hasAddedLoss || false}
+                      onCheckedChange={(checked) => handleChange('hasAddedLoss', !!checked)}
                     />
+                    <span className="text-[12px] font-medium text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>Include ADDEDLOSS</span>
+                  </label>
+                </PropRow>
+                {formData.hasAddedLoss && (
+                  <div className="px-3 pb-3 grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>CPLUS (opt)</div>
+                      <NumericInput id="cplus" placeholder="0.0" value={formData.cplus} onValueChange={(v) => handleChange('cplus', v === '' ? undefined : v)} className="h-7 text-[11px] border-slate-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-black" style={{ fontFamily: 'Poppins, sans-serif' }}>CMINUS (opt)</div>
+                      <NumericInput id="cminus" placeholder="0.0" value={formData.cminus} onValueChange={(v) => handleChange('cminus', v === '' ? undefined : v)} className="h-7 text-[11px] border-slate-300" />
+                    </div>
                   </div>
-                </div>
-              )}
-              </div>
+                )}
+              </PropSection>
             </>
           )}
 
