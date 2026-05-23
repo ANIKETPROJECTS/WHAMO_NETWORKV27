@@ -688,10 +688,10 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
           ...connection,
           id,
           type: 'connection',
-          style: { stroke: '#3b82f6', strokeWidth: 2 },
+          style: { stroke: '#000000', strokeWidth: 2 },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: '#3b82f6',
+            color: '#000000',
           },
           data: { 
             label: connectionLabel, 
@@ -931,9 +931,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
       }
     }
 
-    const strokeColor = type === 'pump' ? '#3d3100'
-      : type === 'checkValve' ? '#007a3f'
-      : '#ffd21f';
+    const strokeColor = '#000000';
 
     const sourceNode = get().nodes.find(n => n.id === sourceId);
     const targetNode = get().nodes.find(n => n.id === targetId);
@@ -1017,20 +1015,20 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
           let markerEnd = edge.markerEnd;
 
           if (newType === 'conduit') {
-            style = { stroke: '#3b82f6', strokeWidth: 2 };
-            markerEnd = { type: MarkerType.ArrowClosed, color: '#3b82f6' };
+            style = { stroke: '#000000', strokeWidth: 2 };
+            markerEnd = { type: MarkerType.ArrowClosed, color: '#000000' };
           } else if (newType === 'dummy') {
-            style = { stroke: '#94a3b8', strokeWidth: 2, strokeDasharray: '5,5' };
-            markerEnd = { type: MarkerType.ArrowClosed, color: '#94a3b8' };
+            style = { stroke: '#000000', strokeWidth: 2, strokeDasharray: '5,5' };
+            markerEnd = { type: MarkerType.ArrowClosed, color: '#000000' };
           } else if (newType === 'pump') {
-            style = { stroke: '#3d3100', strokeWidth: 2.5 };
-            markerEnd = { type: MarkerType.ArrowClosed, color: '#3d3100' };
+            style = { stroke: '#000000', strokeWidth: 2 };
+            markerEnd = { type: MarkerType.ArrowClosed, color: '#000000' };
           } else if (newType === 'checkValve') {
-            style = { stroke: '#007a3f', strokeWidth: 2.5 };
-            markerEnd = { type: MarkerType.ArrowClosed, color: '#007a3f' };
+            style = { stroke: '#000000', strokeWidth: 2 };
+            markerEnd = { type: MarkerType.ArrowClosed, color: '#000000' };
           } else if (newType === 'turbine') {
-            style = { stroke: '#ffd21f', strokeWidth: 2.5 };
-            markerEnd = { type: MarkerType.ArrowClosed, color: '#ffd21f' };
+            style = { stroke: '#000000', strokeWidth: 2 };
+            markerEnd = { type: MarkerType.ArrowClosed, color: '#000000' };
           }
 
           return { 
