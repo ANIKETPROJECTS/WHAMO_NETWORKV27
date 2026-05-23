@@ -52,6 +52,18 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { generateSystemDiagramSVG } from "@/lib/diagram-generator";
 import folderIcon from "@assets/open-folder_1770356038145.png";
+import addFileIcon from "@assets/add-file_1779522127531.png";
+import openFolderIcon from "@assets/open-folder_(1)_1779522148864.png";
+import floppyDiskIcon from "@assets/floppy-disk_1779522257214.png";
+import disketteIcon from "@assets/diskette_1779522365366.png";
+import damIcon from "@assets/dam_1779522984604.png";
+import nodeCircleIcon from "@assets/button_1779523171362.png";
+import yIntersectionIcon from "@assets/y-intersection_(1)_1779523210044.png";
+import waterTankIcon from "@assets/water-tank_(2)_1779523360829.png";
+import windIcon from "@assets/wind_1779523398812.png";
+import waterPumpIcon from "@assets/water-pump_1779523451215.png";
+import pipeIcon from "@assets/pipe_1779523475650.png";
+import turbineImgIcon from "@assets/turbine_1779523517554.png";
 
 // ─── Ribbon helper components ────────────────────────────────────────────────
 function RibbonBtn({
@@ -72,14 +84,14 @@ function RibbonBtn({
       disabled={disabled}
       {...rest}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded min-w-[46px] transition-colors select-none",
+        "flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded min-w-[56px] transition-colors select-none",
         disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-blue-50 active:bg-blue-100",
         active ? "bg-blue-100 ring-1 ring-blue-300" : "",
         highlight && !disabled ? "hover:bg-blue-100" : "",
       )}
     >
       <span className="flex items-center justify-center">{icon}</span>
-      <span className="text-[9px] font-medium text-slate-600 leading-tight text-center max-w-[58px]">{label}</span>
+      <span className="text-[10px] font-medium text-black leading-tight text-center max-w-[64px]" style={{ fontFamily: 'Poppins, sans-serif' }}>{label}</span>
     </button>
   );
 }
@@ -102,30 +114,30 @@ function SmallRibbonBtn({
       disabled={disabled}
       {...rest}
       className={cn(
-        "flex flex-col items-center justify-center gap-0 px-1.5 py-0.5 rounded min-w-[40px] transition-colors select-none",
+        "flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded min-w-[48px] transition-colors select-none",
         disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-blue-50 active:bg-blue-100",
         active ? "bg-blue-100 ring-1 ring-blue-300" : "",
         highlight && !disabled ? "hover:bg-blue-100" : "",
       )}
     >
       <span className="flex items-center justify-center">{icon}</span>
-      <span className="text-[8px] font-medium text-slate-600 leading-tight text-center max-w-[52px]">{label}</span>
+      <span className="text-[9px] font-medium text-black leading-tight text-center max-w-[56px]" style={{ fontFamily: 'Poppins, sans-serif' }}>{label}</span>
     </button>
   );
 }
 
 function RibbonGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-stretch">
-      <div className="flex flex-col">
-        <div className="flex items-center gap-0.5 px-1 pt-1 pb-0.5 flex-1">
+    <div className="flex items-stretch flex-1">
+      <div className="flex flex-col flex-1">
+        <div className="flex items-center justify-center gap-1 px-2 pt-1.5 pb-1 flex-1">
           {children}
         </div>
-        <div className="text-center pb-0.5">
-          <span className="text-[9px] text-slate-400 font-medium tracking-wide uppercase">{label}</span>
+        <div className="text-center pb-1">
+          <span className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase" style={{ fontFamily: 'Poppins, sans-serif' }}>{label}</span>
         </div>
       </div>
-      <div className="w-px bg-slate-200 my-1 mx-0.5 self-stretch flex-shrink-0" />
+      <div className="w-px bg-slate-200 my-1 self-stretch flex-shrink-0" />
     </div>
   );
 }
@@ -419,45 +431,45 @@ export function Header({
       </div>
 
       {/* ── RIBBON ── */}
-      <div className="flex items-stretch bg-[#f3f5f9] overflow-x-auto border-b border-slate-200">
+      <div className="flex items-stretch bg-[#f3f5f9] border-b border-slate-200 w-full">
 
         <RibbonGroup label="File">
-          <div className="grid grid-cols-2 gap-0.5">
-            <SmallRibbonBtn icon={<FilePlus className="w-[14px] h-[14px]" />} label="New" onClick={() => { clearNetwork(); }} />
-            <SmallRibbonBtn icon={<FolderOpen className="w-[14px] h-[14px]" />} label="Open" onClick={onLoad} />
-            <SmallRibbonBtn icon={<Save className="w-[14px] h-[14px]" />} label="Save" onClick={onSave} />
-            <SmallRibbonBtn icon={<Save className="w-[14px] h-[14px]" />} label="Save As" onClick={onSaveAs} />
+          <div className="grid grid-cols-2 gap-1">
+            <SmallRibbonBtn icon={<img src={addFileIcon} className="w-5 h-5 object-contain" alt="New" />} label="New" onClick={() => { clearNetwork(); }} />
+            <SmallRibbonBtn icon={<img src={openFolderIcon} className="w-5 h-5 object-contain" alt="Open" />} label="Open" onClick={onLoad} />
+            <SmallRibbonBtn icon={<img src={floppyDiskIcon} className="w-5 h-5 object-contain" alt="Save" />} label="Save" onClick={onSave} />
+            <SmallRibbonBtn icon={<img src={disketteIcon} className="w-5 h-5 object-contain" alt="Save As" />} label="Save As" onClick={onSaveAs} />
           </div>
         </RibbonGroup>
 
         <RibbonGroup label="Edit">
-          <RibbonBtn icon={<Undo2 className="w-[18px] h-[18px]" />} label="Undo" onClick={undo} disabled={history.past.length === 0} />
-          <RibbonBtn icon={<Redo2 className="w-[18px] h-[18px]" />} label="Redo" onClick={redo} disabled={history.future.length === 0} />
+          <RibbonBtn icon={<Undo2 className="w-5 h-5" />} label="Undo" onClick={undo} disabled={history.past.length === 0} />
+          <RibbonBtn icon={<Redo2 className="w-5 h-5" />} label="Redo" onClick={redo} disabled={history.future.length === 0} />
         </RibbonGroup>
 
         <RibbonGroup label="Insert">
-          <div className="grid grid-cols-4 gap-0.5">
-            <SmallRibbonBtn icon={<Cylinder className="w-[14px] h-[14px] text-blue-600" />} label="Reservoir" onClick={() => addNode("reservoir", { x: 100, y: 100 })} />
-            <SmallRibbonBtn icon={<Circle className="w-[14px] h-[14px] text-blue-500" />} label="Node" onClick={() => addNode("node", { x: 150, y: 150 })} />
-            <SmallRibbonBtn icon={<GitCommitHorizontal className="w-[14px] h-[14px] text-red-500" />} label="Junction" onClick={() => addNode("junction", { x: 200, y: 150 })} />
-            <SmallRibbonBtn icon={<PlusCircle className="w-[14px] h-[14px] text-orange-500" />} label="Surge Tank" onClick={() => addNode("surgeTank", { x: 250, y: 100 })} />
-            <SmallRibbonBtn icon={<ArrowRightCircle className="w-[14px] h-[14px] text-green-600" />} label="Flow BC" onClick={() => addNode("flowBoundary", { x: 50, y: 150 })} />
+          <div className="grid grid-cols-4 gap-1">
+            <SmallRibbonBtn icon={<img src={damIcon} className="w-5 h-5 object-contain" alt="Reservoir" />} label="Reservoir" onClick={() => addNode("reservoir", { x: 100, y: 100 })} />
+            <SmallRibbonBtn icon={<img src={nodeCircleIcon} className="w-5 h-5 object-contain" alt="Node" />} label="Node" onClick={() => addNode("node", { x: 150, y: 150 })} />
+            <SmallRibbonBtn icon={<img src={yIntersectionIcon} className="w-5 h-5 object-contain" alt="Junction" />} label="Junction" onClick={() => addNode("junction", { x: 200, y: 150 })} />
+            <SmallRibbonBtn icon={<img src={waterTankIcon} className="w-5 h-5 object-contain" alt="Surge Tank" />} label="Surge Tank" onClick={() => addNode("surgeTank", { x: 250, y: 100 })} />
+            <SmallRibbonBtn icon={<img src={windIcon} className="w-5 h-5 object-contain" alt="Flow BC" />} label="Flow BC" onClick={() => addNode("flowBoundary", { x: 50, y: 150 })} />
             <SmallRibbonBtn
-              icon={<PlayCircle className={`w-[14px] h-[14px] ${activeLinkTool === 'pump' ? 'text-orange-700' : 'text-orange-500'}`} />}
+              icon={<img src={waterPumpIcon} className={`w-5 h-5 object-contain ${activeLinkTool === 'pump' ? 'opacity-100' : 'opacity-80'}`} alt="Pump" />}
               label="Pump"
               onClick={() => onSetLinkTool?.(activeLinkTool === 'pump' ? null : 'pump')}
               active={activeLinkTool === 'pump'}
               data-testid="ribbon-btn-pump"
             />
             <SmallRibbonBtn
-              icon={<ShieldCheck className={`w-[14px] h-[14px] ${activeLinkTool === 'checkValve' ? 'text-violet-800' : 'text-violet-600'}`} />}
+              icon={<img src={pipeIcon} className={`w-5 h-5 object-contain ${activeLinkTool === 'checkValve' ? 'opacity-100' : 'opacity-80'}`} alt="Check Valve" />}
               label="Check Valve"
               onClick={() => onSetLinkTool?.(activeLinkTool === 'checkValve' ? null : 'checkValve')}
               active={activeLinkTool === 'checkValve'}
               data-testid="ribbon-btn-checkvalve"
             />
             <SmallRibbonBtn
-              icon={<Settings2 className={`w-[14px] h-[14px] ${activeLinkTool === 'turbine' ? 'text-teal-800' : 'text-teal-600'}`} />}
+              icon={<img src={turbineImgIcon} className={`w-5 h-5 object-contain ${activeLinkTool === 'turbine' ? 'opacity-100' : 'opacity-80'}`} alt="Turbine" />}
               label="Turbine"
               onClick={() => onSetLinkTool?.(activeLinkTool === 'turbine' ? null : 'turbine')}
               active={activeLinkTool === 'turbine'}
@@ -467,21 +479,21 @@ export function Header({
         </RibbonGroup>
 
         <RibbonGroup label="Tools">
-          <div className="grid grid-cols-2 gap-0.5">
-            <SmallRibbonBtn icon={<Layout className="w-[14px] h-[14px]" />} label="Diagram" onClick={onShowDiagram} />
+          <div className="grid grid-cols-2 gap-1">
+            <SmallRibbonBtn icon={<Layout className="w-5 h-5" />} label="Diagram" onClick={onShowDiagram} />
             <SmallRibbonBtn
-              icon={<MousePointer2 className="w-[14px] h-[14px]" />}
+              icon={<MousePointer2 className="w-5 h-5" />}
               label="Node Sel."
               onClick={() => window.dispatchEvent(new CustomEvent('toggleNodeSelection'))}
             />
             <SmallRibbonBtn
-              icon={<Table2 className="w-[14px] h-[14px]" />}
+              icon={<Table2 className="w-5 h-5" />}
               label="Flex Table"
               onClick={() => setShowFlexTable(true)}
               data-testid="ribbon-btn-flextable"
             />
             <SmallRibbonBtn
-              icon={<BarChart2 className="w-[14px] h-[14px]" />}
+              icon={<BarChart2 className="w-5 h-5" />}
               label="Visualization"
               onClick={onVisualization}
               data-testid="ribbon-btn-visualization"
@@ -491,12 +503,12 @@ export function Header({
 
         <RibbonGroup label="Analysis">
           <RibbonBtn
-            icon={<Settings2 className="w-[18px] h-[18px]" />}
+            icon={<Settings2 className="w-5 h-5" />}
             label="Comp. Params"
             onClick={() => setShowCompParams(true)}
           />
           <RibbonBtn
-            icon={<ListVideo className="w-[18px] h-[18px]" />}
+            icon={<ListVideo className="w-5 h-5" />}
             label="Output Req."
             onClick={() => { setGenerateDialogMode(null); setShowOutputDialog(true); }}
           />
@@ -504,14 +516,14 @@ export function Header({
 
         <RibbonGroup label="Generate">
           <RibbonBtn
-            icon={<Download className="w-[18px] h-[18px] text-blue-700" />}
+            icon={<Download className="w-5 h-5 text-blue-700" />}
             label="Generate .INP"
             onClick={handleExport}
             highlight
             data-testid="ribbon-btn-generate-inp"
           />
           <RibbonBtn
-            icon={<Download className="w-[18px] h-[18px] text-blue-700" />}
+            icon={<Download className="w-5 h-5 text-blue-700" />}
             label={isGeneratingOut ? "Processing..." : "Generate .OUT"}
             onClick={handleOutGenerate}
             highlight
@@ -522,12 +534,12 @@ export function Header({
 
         <RibbonGroup label="View">
           <RibbonBtn
-            icon={<Layout className="w-[18px] h-[18px]" />}
+            icon={<Layout className="w-5 h-5" />}
             label="Grid"
             onClick={() => window.dispatchEvent(new CustomEvent('toggle-grid'))}
           />
           <RibbonBtn
-            icon={<Maximize2 className="w-[18px] h-[18px]" />}
+            icon={<Maximize2 className="w-5 h-5" />}
             label={isFullscreen ? "Exit FS" : "Full Screen"}
             onClick={() => {
               if (!document.fullscreenElement) {
@@ -538,7 +550,7 @@ export function Header({
             }}
           />
           <RibbonBtn
-            icon={showHoverData ? <Eye className="w-[18px] h-[18px]" /> : <EyeOff className="w-[18px] h-[18px]" />}
+            icon={showHoverData ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
             label={showHoverData ? "Hide Labels" : "Show Labels"}
             onClick={() => setShowHoverData(!showHoverData)}
             active={showHoverData}
@@ -547,9 +559,9 @@ export function Header({
         </RibbonGroup>
 
         <RibbonGroup label="Help">
-          <RibbonBtn icon={<Info className="w-[18px] h-[18px]" />} label="Help" onClick={() => setShowHelp(true)} />
+          <RibbonBtn icon={<Info className="w-5 h-5" />} label="Help" onClick={() => setShowHelp(true)} />
           <RibbonBtn
-            icon={<Layout className="w-[18px] h-[18px]" />}
+            icon={<Layout className="w-5 h-5" />}
             label="Shortcuts"
             onClick={() => window.dispatchEvent(new CustomEvent('toggle-shortcut-console'))}
           />
