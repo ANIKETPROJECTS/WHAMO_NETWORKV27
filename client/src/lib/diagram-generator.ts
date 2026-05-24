@@ -195,19 +195,22 @@ export function generateSystemDiagramSVG(
   }
 
   // ── Detect LATERAL nodes ───────────────────────────────────────────────────
-  // A root node (in-degree 0) with exactly 1 outgoing edge whose target has
-  // level > 0 is "lateral" — it branches off mid-network (e.g. a surge tank).
-  // Pull these out of the main horizontal column layout and place them
-  // vertically adjacent to their anchor node instead.
+  // A "lateral" node is a surge tank (and ONLY a surge tank) that:
+  //   • has in-degree 0 (nothing flows into it from the network)
+  //   • connects into a mid-network node (its single neighbor has level > 0)
+  // Reservoirs and flow boundaries are ALWAYS primary sources — never lateral.
+  // Lateral nodes are pulled out of the main horizontal column layout and
+  // placed vertically (above/below) their anchor node instead.
   const lateralSet    = new Set<string>();
   const lateralAnchor: Record<string, string> = {};
 
   vns.forEach(n => {
-    if ((inDeg[n.id] ?? 0) !== 0) return;
+    if (n.type !== 'surgeTank') return;           // ONLY surge tanks can be lateral
+    if ((inDeg[n.id] ?? 0) !== 0) return;         // must have no incoming flow
     const neighbors = adj[n.id] || [];
-    if (neighbors.length !== 1) return;
+    if (neighbors.length !== 1) return;            // must connect to exactly one node
     const anchorId = neighbors[0];
-    if ((lvl[anchorId] ?? 0) > 0) {
+    if ((lvl[anchorId] ?? 0) > 0) {               // anchor is mid-network
       lateralSet.add(n.id);
       lateralAnchor[n.id] = anchorId;
     }
