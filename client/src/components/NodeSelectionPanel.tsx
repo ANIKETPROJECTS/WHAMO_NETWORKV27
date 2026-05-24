@@ -2,7 +2,7 @@ import { useNetworkStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save, X } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 import { PropSection } from '@/components/ui/prop-section';
 
 interface NodeSelectionPanelProps {
@@ -85,7 +85,7 @@ export function NodeSelectionPanel({ onSave, onClose }: NodeSelectionPanelProps)
               <Button
                 variant={allSelected ? 'default' : 'outline'}
                 size="sm"
-                className="flex-1 h-7 text-[12px] gap-1.5"
+                className="flex-1 h-7 text-[13px] gap-1.5 rounded-full"
                 style={{ fontFamily: 'Poppins, sans-serif' }}
                 onClick={() => setAllNodesSelected(true)}
                 data-testid="button-select-all-nodes"
@@ -95,7 +95,7 @@ export function NodeSelectionPanel({ onSave, onClose }: NodeSelectionPanelProps)
               <Button
                 variant={anySelected ? 'destructive' : 'outline'}
                 size="sm"
-                className="flex-1 h-7 text-[12px] gap-1.5"
+                className="flex-1 h-7 text-[13px] gap-1.5 rounded-full"
                 style={{ fontFamily: 'Poppins, sans-serif' }}
                 onClick={() => setAllNodesSelected(false)}
                 data-testid="button-clear-all-nodes"
@@ -109,7 +109,7 @@ export function NodeSelectionPanel({ onSave, onClose }: NodeSelectionPanelProps)
         {/* Node list section */}
         <PropSection title={`Network Nodes (${nodesList.length})`}>
           <ScrollArea className="max-h-[420px]">
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 pb-3">
               {nodesList.map(node => {
                 const isSelected = nodeSelectionSet.has(node.id);
                 return (
@@ -165,11 +165,11 @@ export function NodeSelectionPanel({ onSave, onClose }: NodeSelectionPanelProps)
         <div className="px-4 py-3 border-t bg-slate-50 shrink-0">
           <Button
             onClick={onSave}
-            className="w-full gap-2 h-9 text-[13px]"
+            className="w-full gap-2 h-9 text-[14px] rounded-full"
             style={{ fontFamily: 'Poppins, sans-serif' }}
             data-testid="button-save-node-selection"
           >
-            <Save className="w-4 h-4" />
+            <CheckCircle2 className="w-5 h-5" />
             Save
           </Button>
         </div>

@@ -717,7 +717,7 @@ export function Header({
                   {computationalParams.stages.map((stage, index) => (
                     <div
                       key={index}
-                      className="grid grid-cols-12 gap-2 items-center p-2 border border-slate-200 rounded-md bg-white relative group"
+                      className="grid grid-cols-12 gap-2 items-center p-2 border border-slate-200 rounded-md bg-white"
                     >
                       <div className="col-span-3">
                         <Input
@@ -768,7 +768,7 @@ export function Header({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
                           disabled={computationalParams.stages.length === 1}
                           onClick={() => {
                             const newStages = computationalParams.stages.filter((_, i) => i !== index);
@@ -895,9 +895,8 @@ export function Header({
               </h2>
               <div className="flex items-center gap-1.5">
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="h-6 text-[11px] px-2"
+                  className="h-7 text-[13px] px-4 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white border-0"
                   style={{ fontFamily: 'Poppins, sans-serif' }}
                   onClick={() => {
                     const types: ("HISTORY" | "PLOT" | "SPREADSHEET")[] = ["HISTORY", "PLOT", "SPREADSHEET"];
@@ -936,9 +935,8 @@ export function Header({
                   Select All
                 </Button>
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="h-6 text-[11px] px-2 text-destructive hover:text-destructive"
+                  className="h-7 text-[13px] px-4 rounded-full bg-red-500 hover:bg-red-600 text-white border-0"
                   style={{ fontFamily: 'Poppins, sans-serif' }}
                   onClick={() => { [...outputRequests].forEach(req => removeOutputRequest(req.id)); }}
                   data-testid="button-clear-all-requests"
@@ -1101,7 +1099,7 @@ export function Header({
                     </div>
                     <Button
                       onClick={handleAddRequest}
-                      className="mt-3 w-full h-8 text-[12px]"
+                      className="mt-3 w-full h-8 text-[13px] rounded-full"
                       style={{ fontFamily: 'Poppins, sans-serif' }}
                       data-testid="button-add-request"
                     >
