@@ -22,7 +22,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/projects/:id", authenticateToken, async (req, res) => {
-    const project = await storage.getProject(Number(req.params.id));
+    const project = await storage.getProject(req.params.id);
     if (!project) return res.status(404).json({ message: "Project not found" });
     if (project.userId !== (req as any).user.id) return res.status(403).json({ message: "Forbidden" });
     res.json(project);
@@ -44,11 +44,11 @@ export async function registerRoutes(
 
   app.put("/api/projects/:id", authenticateToken, async (req, res) => {
     try {
-      const project = await storage.getProject(Number(req.params.id));
+      const project = await storage.getProject(req.params.id);
       if (!project) return res.status(404).json({ message: "Project not found" });
       if (project.userId !== (req as any).user.id) return res.status(403).json({ message: "Forbidden" });
       const input = api.projects.update.input.parse(req.body);
-      const updated = await storage.updateProject(Number(req.params.id), input);
+      const updated = await storage.updateProject(req.params.id, input);
       res.json(updated);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -59,10 +59,10 @@ export async function registerRoutes(
   });
 
   app.delete("/api/projects/:id", authenticateToken, async (req, res) => {
-    const project = await storage.getProject(Number(req.params.id));
+    const project = await storage.getProject(req.params.id);
     if (!project) return res.status(404).json({ message: "Project not found" });
     if (project.userId !== (req as any).user.id) return res.status(403).json({ message: "Forbidden" });
-    await storage.deleteProject(Number(req.params.id));
+    await storage.deleteProject(req.params.id);
     res.status(204).send();
   });
 

@@ -27,7 +27,7 @@ export function useProjects() {
   });
 }
 
-export function useProject(id: number) {
+export function useProject(id: string) {
   return useQuery({
     queryKey: [api.projects.get.path, id],
     queryFn: async () => {
@@ -57,7 +57,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: number } & Partial<CreateProjectRequest>) => {
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<CreateProjectRequest>) => {
       const url = buildUrl(api.projects.update.path, { id });
       const res = await authFetch(url, {
         method: "PUT",
@@ -76,7 +76,7 @@ export function useUpdateProject() {
 export function useDeleteProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       const url = buildUrl(api.projects.delete.path, { id });
       await authFetch(url, { method: "DELETE" });
     },

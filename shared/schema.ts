@@ -142,7 +142,7 @@ export type NetworkState = z.infer<typeof networkStateSchema>;
 
 // === API CONTRACT TYPES ===
 export type Project = {
-  id: number;
+  id: string;
   name: string;
   content: any;
   createdAt: Date | null;
