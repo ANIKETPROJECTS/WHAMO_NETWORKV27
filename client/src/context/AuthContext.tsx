@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { queryClient } from "@/lib/queryClient";
 
 interface AuthUser {
   id: string;
@@ -29,12 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(TOKEN_KEY, tok);
     setToken(tok);
     setUser(userData);
+    queryClient.clear();
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
+    queryClient.clear();
   }, []);
 
   const updateUser = useCallback((userData: AuthUser, newToken?: string) => {

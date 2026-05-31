@@ -16,15 +16,17 @@ export async function registerRoutes(
 
   // All project routes require authentication
   app.get("/api/projects", authenticateToken, async (req, res) => {
-    const userId = (req as any).user.id;
-    const projects = await storage.getProjectsByUser(userId);
+    const user = (req as any).user;
+    const projects = await storage.getProjectsByUser(user.id, user.email);
     res.json(projects);
   });
 
   app.get("/api/projects/:id", authenticateToken, async (req, res) => {
+    const user = (req as any).user;
     const project = await storage.getProject(req.params.id);
     if (!project) return res.status(404).json({ message: "Project not found" });
-    if (project.userId !== (req as any).user.id) return res.status(403).json({ message: "Forbidden" });
+    const canAccess = project.userId === user.id || project.sharedWith.includes(user.email);
+    if (!canAccess) return res.status(403).json({ message: "Forbidden" });
     res.json(project);
   });
 
@@ -44,9 +46,11 @@ export async function registerRoutes(
 
   app.put("/api/projects/:id", authenticateToken, async (req, res) => {
     try {
+      const user = (req as any).user;
       const project = await storage.getProject(req.params.id);
       if (!project) return res.status(404).json({ message: "Project not found" });
-      if (project.userId !== (req as any).user.id) return res.status(403).json({ message: "Forbidden" });
+      const canAccess = project.userId === user.id || project.sharedWith.includes(user.email);
+      if (!canAccess) return res.status(403).json({ message: "Forbidden" });
       const input = api.projects.update.input.parse(req.body);
       const updated = await storage.updateProject(req.params.id, input);
       res.json(updated);
@@ -59,11 +63,51 @@ export async function registerRoutes(
   });
 
   app.delete("/api/projects/:id", authenticateToken, async (req, res) => {
+    const user = (req as any).user;
     const project = await storage.getProject(req.params.id);
     if (!project) return res.status(404).json({ message: "Project not found" });
-    if (project.userId !== (req as any).user.id) return res.status(403).json({ message: "Forbidden" });
+    if (project.userId !== user.id) return res.status(403).json({ message: "Only the owner can delete a project" });
     await storage.deleteProject(req.params.id);
     res.status(204).send();
+  });
+
+  // Share a project with another user by email
+  app.post("/api/projects/:id/share", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const project = await storage.getProject(req.params.id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      if (project.userId !== user.id) return res.status(403).json({ message: "Only the owner can share a project" });
+
+      const { email } = req.body;
+      if (!email?.trim()) return res.status(400).json({ message: "Email is required" });
+      if (email.toLowerCase().trim() === user.email.toLowerCase()) {
+        return res.status(400).json({ message: "You cannot share a project with yourself" });
+      }
+
+      const updated = await storage.shareProject(req.params.id, email);
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to share project" });
+    }
+  });
+
+  // Remove sharing access
+  app.delete("/api/projects/:id/share", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const project = await storage.getProject(req.params.id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      if (project.userId !== user.id) return res.status(403).json({ message: "Only the owner can manage sharing" });
+
+      const { email } = req.body;
+      if (!email?.trim()) return res.status(400).json({ message: "Email is required" });
+
+      const updated = await storage.unshareProject(req.params.id, email);
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to remove sharing" });
+    }
   });
 
   return httpServer;

@@ -148,6 +148,7 @@ export type Project = {
   createdAt: Date | null;
   updatedAt: Date | null;
   userId: string;
+  sharedWith: string[];
 };
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 

@@ -2,11 +2,13 @@ import { type InsertProject, type UpdateProjectRequest, type ProjectResponse } f
 import { Project } from "./models/Project";
 
 export interface IStorage {
-  getProjectsByUser(userId: string): Promise<ProjectResponse[]>;
+  getProjectsByUser(userId: string, userEmail: string): Promise<ProjectResponse[]>;
   getProject(id: string): Promise<ProjectResponse | undefined>;
   createProject(project: InsertProject, userId: string): Promise<ProjectResponse>;
   updateProject(id: string, updates: UpdateProjectRequest): Promise<ProjectResponse>;
   deleteProject(id: string): Promise<void>;
+  shareProject(id: string, email: string): Promise<ProjectResponse>;
+  unshareProject(id: string, email: string): Promise<ProjectResponse>;
 }
 
 function toProjectResponse(doc: any): ProjectResponse {
@@ -15,14 +17,17 @@ function toProjectResponse(doc: any): ProjectResponse {
     name: doc.name,
     content: doc.content,
     userId: doc.userId,
+    sharedWith: doc.sharedWith ?? [],
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
 }
 
 export class MongoStorage implements IStorage {
-  async getProjectsByUser(userId: string): Promise<ProjectResponse[]> {
-    const docs = await Project.find({ userId }).sort({ updatedAt: -1 });
+  async getProjectsByUser(userId: string, userEmail: string): Promise<ProjectResponse[]> {
+    const docs = await Project.find({
+      $or: [{ userId }, { sharedWith: userEmail }],
+    }).sort({ updatedAt: -1 });
     return docs.map(toProjectResponse);
   }
 
@@ -52,6 +57,26 @@ export class MongoStorage implements IStorage {
 
   async deleteProject(id: string): Promise<void> {
     await Project.findByIdAndDelete(id);
+  }
+
+  async shareProject(id: string, email: string): Promise<ProjectResponse> {
+    const doc = await Project.findByIdAndUpdate(
+      id,
+      { $addToSet: { sharedWith: email.toLowerCase().trim() } },
+      { new: true }
+    );
+    if (!doc) throw new Error(`Project ${id} not found`);
+    return toProjectResponse(doc);
+  }
+
+  async unshareProject(id: string, email: string): Promise<ProjectResponse> {
+    const doc = await Project.findByIdAndUpdate(
+      id,
+      { $pull: { sharedWith: email.toLowerCase().trim() } },
+      { new: true }
+    );
+    if (!doc) throw new Error(`Project ${id} not found`);
+    return toProjectResponse(doc);
   }
 }
 
