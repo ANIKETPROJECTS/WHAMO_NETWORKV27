@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +27,11 @@ import {
   Check,
   X,
   Clock,
+  Shield,
+  Eye,
+  EyeOff,
+  Settings,
+  ChevronRight,
 } from "lucide-react";
 import { getAuthHeader } from "@/lib/queryClient";
 
@@ -66,6 +68,17 @@ function formatDate(dateStr: string | null | undefined): string {
   );
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+type TabId = "profile" | "security" | "autosave" | "projects";
+
 interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
@@ -81,23 +94,20 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<TabId>("profile");
 
-  // Profile tab
   const [fullName, setFullName] = useState(user?.fullName || "");
   const [email, setEmail] = useState(user?.email || "");
   const [profileLoading, setProfileLoading] = useState(false);
 
-  // Password tab
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
-  // Autosave tab
   const [autosave, setAutosave] = useState<AutosaveSettings>(getAutosaveSettings);
 
-  // Projects tab
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
@@ -112,7 +122,6 @@ export function SettingsDialog({
     }
   }, [user]);
 
-  // Sync autosave state when dialog opens
   useEffect(() => {
     if (open) setAutosave(getAutosaveSettings());
   }, [open]);
@@ -208,380 +217,434 @@ export function SettingsDialog({
     }
   };
 
-  const poppins = { fontFamily: "Poppins, sans-serif" };
+  const navItems: { id: TabId; label: string; icon: any; description: string }[] = [
+    { id: "profile", label: "Profile", icon: User, description: "Personal info" },
+    { id: "security", label: "Security", icon: Shield, description: "Password" },
+    { id: "autosave", label: "Autosave", icon: Save, description: "Auto-backup" },
+    { id: "projects", label: "Projects", icon: FolderOpen, description: "Manage files" },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        className="p-0 gap-0 overflow-hidden"
-        style={{ maxWidth: 700, height: 580 }}
+        className="p-0 gap-0 overflow-hidden border-0 shadow-2xl"
+        style={{ maxWidth: 760, height: 600, fontFamily: "Poppins, sans-serif" }}
       >
-        <DialogHeader className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
-          <DialogTitle className="text-[15px] font-bold text-slate-900" style={poppins}>
-            Settings
-          </DialogTitle>
-        </DialogHeader>
-
-        <Tabs defaultValue="profile" className="flex flex-1 overflow-hidden" style={{ height: "calc(100% - 57px)" }}>
-          {/* Sidebar nav */}
-          <TabsList className="flex flex-col h-full w-44 rounded-none bg-slate-50 border-r border-slate-200 justify-start items-stretch p-2 gap-0.5 flex-shrink-0">
-            <TabsTrigger
-              value="profile"
-              className="w-full justify-start gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-none"
-              style={poppins}
-            >
-              <User className="w-4 h-4 flex-shrink-0" /> Profile
-            </TabsTrigger>
-            <TabsTrigger
-              value="security"
-              className="w-full justify-start gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-none"
-              style={poppins}
-            >
-              <Lock className="w-4 h-4 flex-shrink-0" /> Password
-            </TabsTrigger>
-            <TabsTrigger
-              value="autosave"
-              className="w-full justify-start gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-none"
-              style={poppins}
-            >
-              <Save className="w-4 h-4 flex-shrink-0" /> Autosave
-            </TabsTrigger>
-            <TabsTrigger
-              value="projects"
-              className="w-full justify-start gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-none"
-              style={poppins}
-            >
-              <FolderOpen className="w-4 h-4 flex-shrink-0" /> Projects
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Content area */}
-          <div className="flex-1 overflow-y-auto">
-
-            {/* ─── PROFILE ─── */}
-            <TabsContent value="profile" className="m-0 p-6">
-              <p className="text-[13px] font-bold text-slate-800 mb-5" style={poppins}>
-                Edit Profile
-              </p>
-              <div className="space-y-4 max-w-sm">
-                <div>
-                  <Label className="text-xs font-semibold text-slate-600 mb-1.5 block" style={poppins}>
-                    Full Name
-                  </Label>
-                  <Input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
-                    className="h-9 text-sm"
-                    data-testid="input-settings-fullname"
-                  />
+        <div className="flex h-full">
+          {/* ── Sidebar ── */}
+          <div className="w-56 flex-shrink-0 bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col rounded-l-lg">
+            {/* Logo area */}
+            <div className="px-5 pt-5 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <Settings className="w-4 h-4 text-white" />
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold text-slate-600 mb-1.5 block" style={poppins}>
-                    Email Address
-                  </Label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="h-9 text-sm"
-                    data-testid="input-settings-email"
-                  />
-                </div>
-                <Button
-                  onClick={handleProfileSave}
-                  disabled={profileLoading}
-                  className="w-full h-9 text-sm rounded-lg"
-                  style={poppins}
-                  data-testid="btn-settings-save-profile"
-                >
-                  {profileLoading ? "Saving…" : "Save Changes"}
-                </Button>
+                <span className="text-white font-bold text-[15px] tracking-tight">Settings</span>
               </div>
-            </TabsContent>
+            </div>
 
-            {/* ─── PASSWORD ─── */}
-            <TabsContent value="security" className="m-0 p-6">
-              <p className="text-[13px] font-bold text-slate-800 mb-5" style={poppins}>
-                Change Password
-              </p>
-              <div className="space-y-4 max-w-sm">
-                <div>
-                  <Label className="text-xs font-semibold text-slate-600 mb-1.5 block" style={poppins}>
-                    Current Password
-                  </Label>
-                  <Input
-                    type={showPasswords ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-9 text-sm"
-                    data-testid="input-settings-current-password"
-                  />
+            {/* User card */}
+            <div className="px-4 py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-white font-bold text-sm">
+                    {getInitials(user?.fullName || "U")}
+                  </span>
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold text-slate-600 mb-1.5 block" style={poppins}>
-                    New Password
-                  </Label>
-                  <Input
-                    type={showPasswords ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-9 text-sm"
-                    data-testid="input-settings-new-password"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold text-slate-600 mb-1.5 block" style={poppins}>
-                    Confirm New Password
-                  </Label>
-                  <Input
-                    type={showPasswords ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-9 text-sm"
-                    data-testid="input-settings-confirm-password"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="show-pw"
-                    checked={showPasswords}
-                    onChange={(e) => setShowPasswords(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-blue-600"
-                  />
-                  <label htmlFor="show-pw" className="text-xs text-slate-500 cursor-pointer" style={poppins}>
-                    Show passwords
-                  </label>
-                </div>
-                <Button
-                  onClick={handlePasswordSave}
-                  disabled={passwordLoading}
-                  className="w-full h-9 text-sm rounded-lg"
-                  style={poppins}
-                  data-testid="btn-settings-change-password"
-                >
-                  {passwordLoading ? "Updating…" : "Update Password"}
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* ─── AUTOSAVE ─── */}
-            <TabsContent value="autosave" className="m-0 p-6">
-              <p className="text-[13px] font-bold text-slate-800 mb-1" style={poppins}>
-                Autosave
-              </p>
-              <p className="text-xs text-slate-500 mb-5" style={poppins}>
-                Automatically save your project to the cloud at regular intervals.
-              </p>
-
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 mb-5 max-w-sm">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800" style={poppins}>
-                    Enable Autosave
+                <div className="min-w-0">
+                  <p className="text-white text-[13px] font-semibold truncate">
+                    {user?.fullName || "User"}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5" style={poppins}>
-                    Save your project silently in the background
-                  </p>
+                  <p className="text-slate-400 text-[11px] truncate">{user?.email || ""}</p>
                 </div>
-                <Switch
-                  checked={autosave.enabled}
-                  onCheckedChange={(checked) =>
-                    handleAutosaveChange({ ...autosave, enabled: checked })
-                  }
-                  data-testid="switch-autosave"
-                />
               </div>
+            </div>
 
-              {autosave.enabled && (
-                <div className="max-w-sm">
-                  <Label className="text-xs font-semibold text-slate-600 mb-2 block" style={poppins}>
-                    Save Interval
-                  </Label>
-                  <Select
-                    value={String(autosave.intervalSec)}
-                    onValueChange={(v) =>
-                      handleAutosaveChange({ ...autosave, intervalSec: Number(v) })
-                    }
+            {/* Nav */}
+            <nav className="flex-1 p-3 space-y-1">
+              {navItems.map(({ id, label, icon: Icon, description }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left group ${
+                    activeTab === id
+                      ? "bg-blue-500 shadow-lg shadow-blue-500/20"
+                      : "hover:bg-white/8"
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                      activeTab === id ? "bg-white/20" : "bg-white/6 group-hover:bg-white/10"
+                    }`}
                   >
-                    <SelectTrigger className="h-9 text-sm" data-testid="select-autosave-interval">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">Every 30 seconds</SelectItem>
-                      <SelectItem value="60">Every 1 minute</SelectItem>
-                      <SelectItem value="120">Every 2 minutes</SelectItem>
-                      <SelectItem value="300">Every 5 minutes</SelectItem>
-                      <SelectItem value="600">Every 10 minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-slate-400 mt-3" style={poppins}>
-                    Autosave only runs when a project is open and has been saved at least once.
-                  </p>
+                    <Icon className={`w-3.5 h-3.5 ${activeTab === id ? "text-white" : "text-slate-400"}`} />
+                  </div>
+                  <div>
+                    <p className={`text-[12px] font-semibold leading-none mb-0.5 ${activeTab === id ? "text-white" : "text-slate-300"}`}>
+                      {label}
+                    </p>
+                    <p className={`text-[10px] leading-none ${activeTab === id ? "text-blue-100" : "text-slate-500"}`}>
+                      {description}
+                    </p>
+                  </div>
+                  {activeTab === id && (
+                    <ChevronRight className="w-3.5 h-3.5 text-white/60 ml-auto flex-shrink-0" />
+                  )}
+                </button>
+              ))}
+            </nav>
+
+            {/* Bottom version */}
+            <div className="px-5 py-3 border-t border-white/10">
+              <p className="text-slate-600 text-[10px]">WHAMO Designer</p>
+            </div>
+          </div>
+
+          {/* ── Content area ── */}
+          <div className="flex-1 flex flex-col bg-white rounded-r-lg overflow-hidden">
+            {/* Content header */}
+            <div className="px-7 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+              {(() => {
+                const item = navItems.find((n) => n.id === activeTab)!;
+                const Icon = item.icon;
+                return (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-[17px] font-bold text-slate-900">{item.label}</h2>
+                      <p className="text-[12px] text-slate-400 mt-0.5">
+                        {activeTab === "profile" && "Update your personal information"}
+                        {activeTab === "security" && "Change your account password"}
+                        {activeTab === "autosave" && "Configure automatic cloud backups"}
+                        {activeTab === "projects" && "View and manage your saved projects"}
+                      </p>
+                    </div>
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                      <Icon className="w-4.5 h-4.5 text-blue-600 w-[18px] h-[18px]" />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto px-7 py-6">
+
+              {/* ─── PROFILE ─── */}
+              {activeTab === "profile" && (
+                <div className="space-y-5 max-w-sm">
+                  <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="text-white font-bold text-lg">
+                        {getInitials(user?.fullName || "U")}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">{user?.fullName || "—"}</p>
+                      <p className="text-xs text-slate-400">{user?.email || "—"}</p>
+                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                        ACTIVE
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">
+                      Full Name
+                    </Label>
+                    <Input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Your full name"
+                      className="h-10 text-sm border-slate-200 focus-visible:ring-blue-500"
+                      data-testid="input-settings-fullname"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">
+                      Email Address
+                    </Label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="h-10 text-sm border-slate-200 focus-visible:ring-blue-500"
+                      data-testid="input-settings-email"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleProfileSave}
+                    disabled={profileLoading}
+                    className="w-full h-10 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 shadow-sm"
+                    data-testid="btn-settings-save-profile"
+                  >
+                    {profileLoading ? "Saving…" : "Save Changes"}
+                  </Button>
                 </div>
               )}
-            </TabsContent>
 
-            {/* ─── PROJECTS ─── */}
-            <TabsContent value="projects" className="m-0 p-6">
-              <p className="text-[13px] font-bold text-slate-800 mb-4" style={poppins}>
-                My Projects
-              </p>
+              {/* ─── SECURITY ─── */}
+              {activeTab === "security" && (
+                <div className="space-y-5 max-w-sm">
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                    <Shield className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      Use a strong password with at least 8 characters, mixing letters and numbers.
+                    </p>
+                  </div>
 
-              {projectsLoading && (
-                <div className="flex justify-center py-10">
-                  <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
-                </div>
-              )}
-
-              {!projectsLoading && (!Array.isArray(projects) || projects.length === 0) && (
-                <div className="flex flex-col items-center py-12 text-slate-400 gap-3">
-                  <FolderOpen className="w-10 h-10 text-slate-300" />
-                  <p className="text-sm" style={poppins}>No saved projects yet</p>
-                </div>
-              )}
-
-              {!projectsLoading && Array.isArray(projects) && projects.length > 0 && (
-                <div className="space-y-2">
-                  {(projects as any[]).map((project) => (
-                    <div
-                      key={project.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                        project.id === currentProjectId
-                          ? "border-blue-300 bg-blue-50/60"
-                          : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
-                      }`}
-                      data-testid={`settings-project-card-${project.id}`}
-                    >
-                      <FolderOpen
-                        className={`w-4 h-4 flex-shrink-0 ${
-                          project.id === currentProjectId ? "text-blue-600" : "text-slate-400"
-                        }`}
-                      />
-
-                      {/* Name / inline edit */}
-                      {editingProjectId === project.id ? (
-                        <div className="flex-1 flex items-center gap-1.5">
+                  {(["Current Password", "New Password", "Confirm New Password"] as const).map((labelText, i) => {
+                    const values = [currentPassword, newPassword, confirmPassword];
+                    const setters = [setCurrentPassword, setNewPassword, setConfirmPassword];
+                    const testIds = ["input-settings-current-password", "input-settings-new-password", "input-settings-confirm-password"];
+                    return (
+                      <div key={labelText}>
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">
+                          {labelText}
+                        </Label>
+                        <div className="relative">
                           <Input
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleRenameConfirm(project.id);
-                              if (e.key === "Escape") setEditingProjectId(null);
-                            }}
-                            className="h-7 text-sm flex-1 py-0"
-                            autoFocus
+                            type={showPasswords ? "text" : "password"}
+                            value={values[i]}
+                            onChange={(e) => setters[i](e.target.value)}
+                            placeholder="••••••••"
+                            className="h-10 text-sm border-slate-200 focus-visible:ring-blue-500 pr-10"
+                            data-testid={testIds[i]}
                           />
-                          <button
-                            onClick={() => handleRenameConfirm(project.id)}
-                            className="p-1 text-green-600 hover:text-green-700 rounded"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setEditingProjectId(null)}
-                            className="p-1 text-slate-400 hover:text-slate-600 rounded"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className="text-[13px] font-semibold text-slate-700 truncate"
-                              style={poppins}
+                          {i === 2 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowPasswords(!showPasswords)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                             >
-                              {project.name}
-                            </span>
-                            {project.id === currentProjectId && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-600 text-white rounded-full flex-shrink-0">
-                                OPEN
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span className="text-[11px] text-slate-400" style={poppins}>
-                              {formatDate(project.updatedAt || project.createdAt)}
-                            </span>
-                          </div>
+                              {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    );
+                  })}
 
-                      {/* Action buttons — hidden during inline rename */}
-                      {editingProjectId !== project.id && (
-                        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                          {confirmDeleteId === project.id ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-red-600 font-medium" style={poppins}>
-                                Delete?
-                              </span>
+                  <Button
+                    onClick={handlePasswordSave}
+                    disabled={passwordLoading}
+                    className="w-full h-10 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 shadow-sm"
+                    data-testid="btn-settings-change-password"
+                  >
+                    {passwordLoading ? "Updating…" : "Update Password"}
+                  </Button>
+                </div>
+              )}
+
+              {/* ─── AUTOSAVE ─── */}
+              {activeTab === "autosave" && (
+                <div className="max-w-sm space-y-5">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[13px] font-semibold text-slate-800">Enable Autosave</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Save silently in the background</p>
+                      </div>
+                      <Switch
+                        checked={autosave.enabled}
+                        onCheckedChange={(checked) =>
+                          handleAutosaveChange({ ...autosave, enabled: checked })
+                        }
+                        data-testid="switch-autosave"
+                      />
+                    </div>
+
+                    {autosave.enabled && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block">
+                          Save Interval
+                        </Label>
+                        <Select
+                          value={String(autosave.intervalSec)}
+                          onValueChange={(v) =>
+                            handleAutosaveChange({ ...autosave, intervalSec: Number(v) })
+                          }
+                        >
+                          <SelectTrigger className="h-9 text-sm" data-testid="select-autosave-interval">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="30">Every 30 seconds</SelectItem>
+                            <SelectItem value="60">Every 1 minute</SelectItem>
+                            <SelectItem value="120">Every 2 minutes</SelectItem>
+                            <SelectItem value="300">Every 5 minutes</SelectItem>
+                            <SelectItem value="600">Every 10 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
+                    <Save className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-blue-600 leading-relaxed">
+                      Autosave only runs when a project is open and has been saved at least once.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── PROJECTS ─── */}
+              {activeTab === "projects" && (
+                <div>
+                  {projectsLoading && (
+                    <div className="flex justify-center py-12">
+                      <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                    </div>
+                  )}
+
+                  {!projectsLoading && (!Array.isArray(projects) || projects.length === 0) && (
+                    <div className="flex flex-col items-center py-16 text-slate-300 gap-3">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                        <FolderOpen className="w-7 h-7 text-slate-300" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-slate-400">No saved projects</p>
+                        <p className="text-xs text-slate-300 mt-1">Save a project to see it here</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!projectsLoading && Array.isArray(projects) && projects.length > 0 && (
+                    <div className="space-y-2">
+                      {(projects as any[]).map((project) => (
+                        <div
+                          key={project.id}
+                          className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all ${
+                            project.id === currentProjectId
+                              ? "border-blue-200 bg-blue-50/60 shadow-sm"
+                              : "border-slate-100 hover:border-slate-200 bg-white hover:bg-slate-50/80"
+                          }`}
+                          data-testid={`settings-project-card-${project.id}`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                              project.id === currentProjectId ? "bg-blue-100" : "bg-slate-100"
+                            }`}
+                          >
+                            <FolderOpen
+                              className={`w-4 h-4 ${
+                                project.id === currentProjectId ? "text-blue-600" : "text-slate-400"
+                              }`}
+                            />
+                          </div>
+
+                          {editingProjectId === project.id ? (
+                            <div className="flex-1 flex items-center gap-1.5">
+                              <Input
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleRenameConfirm(project.id);
+                                  if (e.key === "Escape") setEditingProjectId(null);
+                                }}
+                                className="h-7 text-sm flex-1 py-0"
+                                autoFocus
+                              />
                               <button
-                                onClick={() => handleDeleteConfirm(project.id)}
-                                disabled={deleteProject.isPending}
-                                className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
-                                style={poppins}
+                                onClick={() => handleRenameConfirm(project.id)}
+                                className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                               >
-                                {deleteProject.isPending ? "…" : "Yes"}
+                                <Check className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => setConfirmDeleteId(null)}
-                                className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
-                                style={poppins}
+                                onClick={() => setEditingProjectId(null)}
+                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                               >
-                                No
+                                <X className="w-4 h-4" />
                               </button>
                             </div>
                           ) : (
-                            <>
-                              {onLoadProject && (
-                                <button
-                                  onClick={() => {
-                                    onLoadProject(project);
-                                    onClose();
-                                  }}
-                                  className="px-2.5 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
-                                  style={poppins}
-                                  data-testid={`settings-btn-open-${project.id}`}
-                                >
-                                  Open
-                                </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[13px] font-semibold text-slate-700 truncate">
+                                  {project.name}
+                                </span>
+                                {project.id === currentProjectId && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-blue-600 text-white rounded-full flex-shrink-0 tracking-wide">
+                                    OPEN
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3 text-slate-300" />
+                                <span className="text-[11px] text-slate-400">
+                                  {formatDate(project.updatedAt || project.createdAt)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {editingProjectId !== project.id && (
+                            <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                              {confirmDeleteId === project.id ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-red-500 font-medium">Delete?</span>
+                                  <button
+                                    onClick={() => handleDeleteConfirm(project.id)}
+                                    disabled={deleteProject.isPending}
+                                    className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                                  >
+                                    {deleteProject.isPending ? "…" : "Yes"}
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-lg transition-colors"
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  {onLoadProject && (
+                                    <button
+                                      onClick={() => {
+                                        onLoadProject(project);
+                                        onClose();
+                                      }}
+                                      className="px-3 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
+                                      data-testid={`settings-btn-open-${project.id}`}
+                                    >
+                                      Open
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleRenameStart(project)}
+                                    className="p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                                    title="Rename"
+                                    data-testid={`settings-btn-rename-${project.id}`}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setConfirmDeleteId(project.id);
+                                      setEditingProjectId(null);
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                    title="Delete"
+                                    data-testid={`settings-btn-delete-${project.id}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
                               )}
-                              <button
-                                onClick={() => handleRenameStart(project)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                                title="Rename"
-                                data-testid={`settings-btn-rename-${project.id}`}
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setConfirmDeleteId(project.id);
-                                  setEditingProjectId(null);
-                                }}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                title="Delete"
-                                data-testid={`settings-btn-delete-${project.id}`}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </>
+                            </div>
                           )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
-            </TabsContent>
+            </div>
           </div>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );
