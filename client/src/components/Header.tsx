@@ -310,6 +310,7 @@ export function Header({
 
   const [localParams, setLocalParams] = useState(computationalParams);
   const [selectedElementId, setSelectedElementId] = useState<string>("");
+  const [selectedGroupType, setSelectedGroupType] = useState<"" | "nodes" | "elements" | "conduits" | "dummy">("");
   const [selectedVars, setSelectedVars] = useState<string[]>([]);
   const [requestType, setRequestType] = useState<
     "HISTORY" | "PLOT" | "SPREADSHEET" | "SNAPSHOT"
@@ -349,6 +350,75 @@ export function Header({
     toast({
       title: "Request Added",
       description: "Output request added to History, Plot, and Spreadsheet.",
+    });
+  };
+
+  const handleAddAllForType = () => {
+    if (!selectedGroupType || selectedVars.length === 0) return;
+    const allTypes: ("HISTORY" | "PLOT" | "SPREADSHEET")[] = ["HISTORY", "PLOT", "SPREADSHEET"];
+    let added = 0;
+
+    if (selectedGroupType === "nodes") {
+      nodes.forEach(node => {
+        allTypes.forEach(reqType => {
+          const exists = outputRequests.some(r => r.elementId === node.id && r.requestType === reqType && r.isElement === false);
+          if (!exists) {
+            addOutputRequest({ elementId: node.id, elementType: "node", requestType: reqType, isElement: false, variables: selectedVars });
+            added++;
+          }
+        });
+      });
+    } else if (selectedGroupType === "elements") {
+      const specialNodes = nodes.filter(n => ["surgeTank","pump","checkValve","turbine"].includes(n.data?.type || n.type || ""));
+      specialNodes.forEach(node => {
+        allTypes.forEach(reqType => {
+          const exists = outputRequests.some(r => r.elementId === node.id && r.requestType === reqType && r.isElement === true);
+          if (!exists) {
+            addOutputRequest({ elementId: node.id, elementType: "node", requestType: reqType, isElement: true, variables: selectedVars });
+            added++;
+          }
+        });
+      });
+      const turbineEdges = Array.from(new Map(edges.filter(e => e.data?.type === "turbine").map(e => [e.data?.label || e.id, e])).values());
+      turbineEdges.forEach(edge => {
+        allTypes.forEach(reqType => {
+          const exists = outputRequests.some(r => r.elementId === edge.id && r.requestType === reqType);
+          if (!exists) {
+            addOutputRequest({ elementId: edge.id, elementType: "edge", requestType: reqType, isElement: true, variables: selectedVars });
+            added++;
+          }
+        });
+      });
+    } else if (selectedGroupType === "conduits") {
+      const conduitEdges = Array.from(new Map(edges.filter(e => e.data?.type === "conduit").map(e => [e.data?.label || e.id, e])).values());
+      conduitEdges.forEach(edge => {
+        allTypes.forEach(reqType => {
+          const exists = outputRequests.some(r => r.elementId === edge.id && r.requestType === reqType);
+          if (!exists) {
+            addOutputRequest({ elementId: edge.id, elementType: "edge", requestType: reqType, isElement: true, variables: selectedVars });
+            added++;
+          }
+        });
+      });
+    } else if (selectedGroupType === "dummy") {
+      const dummyEdges = Array.from(new Map(edges.filter(e => e.data?.type === "dummy").map(e => [e.data?.label || e.id, e])).values());
+      dummyEdges.forEach(edge => {
+        allTypes.forEach(reqType => {
+          const exists = outputRequests.some(r => r.elementId === edge.id && r.requestType === reqType);
+          if (!exists) {
+            addOutputRequest({ elementId: edge.id, elementType: "edge", requestType: reqType, isElement: true, variables: selectedVars });
+            added++;
+          }
+        });
+      });
+    }
+
+    const typeLabels = { nodes: "Nodes", elements: "Elements", conduits: "Conduits", dummy: "Dummy Pipes" };
+    toast({
+      title: "Requests Added",
+      description: added > 0
+        ? `Added requests for all ${typeLabels[selectedGroupType]} (History, Plot & Spreadsheet).`
+        : `All ${typeLabels[selectedGroupType]} already have requests configured.`,
     });
   };
 
@@ -957,10 +1027,36 @@ export function Header({
               {/* ── Request Configuration ── */}
               <PropSection title="Request Configuration">
 
+                {/* Select Type (group selection, hidden for SNAPSHOT) */}
+                {requestType !== "SNAPSHOT" && (
+                  <PropRow label="Select Type">
+                    <Select
+                      value={selectedGroupType}
+                      onValueChange={(v: any) => {
+                        setSelectedGroupType(v);
+                        setSelectedElementId("");
+                      }}
+                    >
+                      <SelectTrigger
+                        className="h-7 text-[12px] font-medium text-black border-slate-300"
+                        style={{ fontFamily: 'Poppins, sans-serif' }}
+                      >
+                        <SelectValue placeholder="Select type..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nodes">All Nodes</SelectItem>
+                        <SelectItem value="elements">All Elements</SelectItem>
+                        <SelectItem value="conduits">All Conduits</SelectItem>
+                        <SelectItem value="dummy">All Dummy Pipes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </PropRow>
+                )}
+
                 {/* Select Element (hidden for SNAPSHOT) */}
                 {requestType !== "SNAPSHOT" && (
                   <PropRow label="Select Element">
-                    <Select value={selectedElementId} onValueChange={setSelectedElementId}>
+                    <Select value={selectedElementId} onValueChange={(v) => { setSelectedElementId(v); setSelectedGroupType(""); }}>
                       <SelectTrigger
                         className="h-7 text-[12px] font-medium text-black border-slate-300"
                         style={{ fontFamily: 'Poppins, sans-serif' }}
@@ -1096,14 +1192,39 @@ export function Header({
                         </div>
                       ))}
                     </div>
-                    <Button
-                      onClick={handleAddRequest}
-                      className="mt-3 w-full h-8 text-[13px] rounded-full"
-                      style={{ fontFamily: 'Poppins, sans-serif' }}
-                      data-testid="button-add-request"
-                    >
-                      Add Request
-                    </Button>
+                    <div className="mt-3 flex flex-col gap-2">
+                      {selectedGroupType && (
+                        <Button
+                          onClick={handleAddAllForType}
+                          disabled={selectedVars.length === 0}
+                          className="w-full h-8 text-[13px] rounded-full bg-green-600 hover:bg-green-700 text-white"
+                          style={{ fontFamily: 'Poppins, sans-serif' }}
+                          data-testid="button-add-all-for-type"
+                        >
+                          Add All for {selectedGroupType === "nodes" ? "Nodes" : selectedGroupType === "elements" ? "Elements" : selectedGroupType === "conduits" ? "Conduits" : "Dummy Pipes"}
+                        </Button>
+                      )}
+                      {selectedElementId && (
+                        <Button
+                          onClick={handleAddRequest}
+                          disabled={selectedVars.length === 0}
+                          className="w-full h-8 text-[13px] rounded-full"
+                          style={{ fontFamily: 'Poppins, sans-serif' }}
+                          data-testid="button-add-request"
+                        >
+                          Add Request
+                        </Button>
+                      )}
+                      {!selectedGroupType && !selectedElementId && (
+                        <Button
+                          disabled
+                          className="w-full h-8 text-[13px] rounded-full opacity-50"
+                          style={{ fontFamily: 'Poppins, sans-serif' }}
+                        >
+                          Select a type or element above
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </PropSection>
               )}
