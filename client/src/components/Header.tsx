@@ -25,7 +25,18 @@ import {
   EyeOff,
   BarChart2,
   X,
+  ChevronDown,
+  Settings,
+  LogOut,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { PropSection, PropRow } from "@/components/ui/prop-section";
 import { FlexTable } from "@/components/FlexTable";
 import { Button } from "@/components/ui/button";
@@ -240,6 +251,8 @@ interface HeaderProps {
   activeLinkTool?: 'pump' | 'checkValve' | 'turbine' | null;
   onSetLinkTool?: (tool: 'pump' | 'checkValve' | 'turbine' | null) => void;
   onShowFilePreview?: (content: string, fileName: string, type: 'inp' | 'out') => void;
+  onLoadProject?: (project: any) => void;
+  currentProjectId?: number | null;
 }
 
 export function Header({
@@ -256,8 +269,11 @@ export function Header({
   activeLinkTool,
   onSetLinkTool,
   onShowFilePreview,
+  onLoadProject,
+  currentProjectId,
 }: HeaderProps) {
   const { user, logout } = useAuth();
+  const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -576,19 +592,53 @@ export function Header({
           </div>
           {user && (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <span className="text-[11px] text-slate-500 font-medium max-w-[120px] truncate" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                {user.fullName}
-              </span>
-              <button
-                onClick={logout}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 transition-colors border border-slate-200 hover:border-red-200"
-                style={{ fontFamily: 'Poppins, sans-serif' }}
-                data-testid="button-logout"
-              >
-                Sign out
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors group focus:outline-none"
+                    data-testid="btn-user-menu"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] font-bold text-white uppercase">
+                        {user.fullName.charAt(0)}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-700 font-semibold max-w-[110px] truncate" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                      {user.fullName}
+                    </span>
+                    <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors flex-shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 shadow-lg">
+                  <DropdownMenuItem
+                    onClick={() => setShowSettings(true)}
+                    className="flex items-center gap-2 cursor-pointer text-[13px]"
+                    style={{ fontFamily: 'Poppins, sans-serif' }}
+                    data-testid="menu-item-settings"
+                  >
+                    <Settings className="w-4 h-4 text-slate-500" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="flex items-center gap-2 cursor-pointer text-[13px] text-red-600 focus:text-red-600 focus:bg-red-50"
+                    style={{ fontFamily: 'Poppins, sans-serif' }}
+                    data-testid="menu-item-signout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
+          <SettingsDialog
+            open={showSettings}
+            onClose={() => setShowSettings(false)}
+            onLoadProject={onLoadProject}
+            currentProjectId={currentProjectId}
+          />
         </div>
       </div>
 

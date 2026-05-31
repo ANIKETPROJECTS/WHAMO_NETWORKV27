@@ -63,6 +63,7 @@ import { validateNetwork, ValidationError } from '@/lib/validator';
 import { VisualizationView } from '@/components/visualization/VisualizationView';
 import { ProjectsListPanel } from '@/components/ProjectsListPanel';
 import { getAuthHeader } from '@/lib/queryClient';
+import { getAutosaveSettings } from '@/components/SettingsDialog';
 
 const nodeTypes = {
   reservoir: ReservoirNode,
@@ -235,6 +236,34 @@ function DesignerInner() {
       toast({ variant: "destructive", title: "Save Failed", description: "Could not save project. Please try again." });
     }
   };
+
+  // ── Autosave ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const startInterval = () => {
+      if (interval) clearInterval(interval);
+      const settings = getAutosaveSettings();
+      if (!settings.enabled) return;
+      interval = setInterval(() => {
+        const { projectName: pn } = useNetworkStore.getState();
+        const currentId = serverProjectIdRef.current;
+        if (!currentId || !pn || pn === "Untitled Network") return;
+        handleSave();
+      }, settings.intervalSec * 1000);
+    };
+
+    startInterval();
+
+    const handleSettingsChanged = () => startInterval();
+    window.addEventListener("autosave-settings-changed", handleSettingsChanged);
+
+    return () => {
+      if (interval) clearInterval(interval);
+      window.removeEventListener("autosave-settings-changed", handleSettingsChanged);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveAs = async () => {
     const state2 = useNetworkStore.getState();
@@ -662,6 +691,8 @@ function DesignerInner() {
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [filePreview, setFilePreview] = useState<{ content: string; fileName: string; type: 'inp' | 'out' } | null>(null);
   const [serverProjectId, setServerProjectId] = useState<number | null>(null);
+  const serverProjectIdRef = useRef<number | null>(null);
+  useEffect(() => { serverProjectIdRef.current = serverProjectId; }, [serverProjectId]);
   const [showProjectsList, setShowProjectsList] = useState(false);
 
   useEffect(() => {
@@ -1042,6 +1073,8 @@ function DesignerInner() {
         activeLinkTool={activeLinkTool}
         onSetLinkTool={setActiveLinkTool}
         onShowFilePreview={(content, fileName, type) => setFilePreview({ content, fileName, type })}
+        onLoadProject={handleLoadFromServer}
+        currentProjectId={serverProjectId}
       />
 
       {/* Projects List Panel */}

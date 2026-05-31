@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   register: (fullName: string, email: string, password: string) => Promise<void>;
+  updateUser: (userData: AuthUser, newToken?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,6 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
+  }, []);
+
+  const updateUser = useCallback((userData: AuthUser, newToken?: string) => {
+    setUser(userData);
+    if (newToken) {
+      localStorage.setItem(TOKEN_KEY, newToken);
+      setToken(newToken);
+    }
   }, []);
 
   useEffect(() => {
@@ -75,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

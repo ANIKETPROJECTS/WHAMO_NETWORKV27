@@ -69,3 +69,73 @@ export async function login(req: Request, res: Response) {
 export async function getMe(req: Request, res: Response) {
   return res.json({ user: (req as any).user });
 }
+
+export async function updateProfile(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user.id;
+    const { fullName, email } = req.body;
+
+    if (!fullName?.trim() && !email?.trim()) {
+      return res.status(400).json({ message: "At least one field is required" });
+    }
+
+    const current = await userStore.findById(userId);
+    if (!current) return res.status(404).json({ message: "User not found" });
+
+    if (email && email.toLowerCase().trim() !== current.email) {
+      const existing = await userStore.findByEmail(email);
+      if (existing && existing.id !== userId) {
+        return res.status(409).json({ message: "That email is already in use by another account" });
+      }
+    }
+
+    const updated = await userStore.update(userId, {
+      fullName: fullName?.trim() || current.fullName,
+      email: email?.toLowerCase().trim() || current.email,
+    });
+
+    if (!updated) return res.status(404).json({ message: "User not found" });
+
+    const token = jwt.sign(
+      { id: updated.id, email: updated.email, fullName: updated.fullName },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES }
+    );
+
+    return res.json({
+      token,
+      user: { id: updated.id, email: updated.email, fullName: updated.fullName },
+    });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function changePassword(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "New password must be at least 8 characters" });
+    }
+
+    const user = await userStore.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return res.status(401).json({ message: "Current password is incorrect" });
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await userStore.update(userId, { password: hashed });
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

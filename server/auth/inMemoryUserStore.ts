@@ -37,6 +37,19 @@ class InMemoryUserStore {
     return user;
   }
 
+  async update(id: string, data: { fullName?: string; email?: string; password?: string }): Promise<StoredUser | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated: StoredUser = {
+      ...user,
+      ...(data.fullName !== undefined && { fullName: data.fullName.trim() }),
+      ...(data.email !== undefined && { email: data.email.toLowerCase().trim() }),
+      ...(data.password !== undefined && { password: data.password }),
+    };
+    this.users.set(id, updated);
+    return updated;
+  }
+
   async seedDemo(): Promise<void> {
     const existing = await this.findByEmail("demo@example.com");
     if (existing) return;
