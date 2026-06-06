@@ -361,20 +361,30 @@ function getRowValue(
       hasAddedLoss:       false,
       hasShape:           false,
       includeNumSegments: false,
-      variable:           false,
+      hasVariable:        false,
+      inclInp:            true,
       pumpStatus:         'ACTIVE',
       valveStatus:        'OPEN',
       operationMode:      'TURBINE',
     };
     if (col.key in FIELD_DEFAULTS) {
       const def = FIELD_DEFAULTS[col.key];
-      if (typeof def === 'boolean') return def ? 'true' : 'false';
+      if (typeof def === 'boolean') {
+        // Boolean-option dropdowns (Yes / No): use the display label, not 'true'/'false'
+        if (col.type === 'dropdown' && col.options?.[0] === 'Yes') return def ? 'Yes' : 'No';
+        return def ? 'true' : 'false';
+      }
       return def;
     }
     return '';
   }
 
-  if (typeof val === 'boolean') return val ? 'true' : 'false';
+  // Boolean values: use 'Yes'/'No' for Yes/No dropdown columns, plain 'true'/'false' elsewhere
+  if (typeof val === 'boolean' || val === 'true' || val === 'false') {
+    const isTrue = val === true || val === 'true';
+    if (col.type === 'dropdown' && col.options?.[0] === 'Yes') return isTrue ? 'Yes' : 'No';
+    return isTrue ? 'true' : 'false';
+  }
   return val as string | number;
 }
 
