@@ -6,8 +6,8 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 3006,
-        MONGODB_URI: process.env.MONGODB_URI,
-        JWT_SECRET: process.env.JWT_SECRET,
+        MONGODB_URI: "mongodb+srv://raneaniket23_db_user:CziItK0T30mdH4Uq@hydraulictransient.am7vyms.mongodb.net/?appName=HYDRAULICTRANSIENT",
+        JWT_SECRET: "7NKdfyo2YjvXFiVDNGYRy2+Ks3+/Nwt27Clvsn2I4BhNWmmObO/Cm/933wPfVRIAFtVjQJwZIMKhyUYfk/tbqg==",
       }
     }
   ]
